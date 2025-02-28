@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Datakvalitet{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <div>
+      <ul>
+        {% if g.user %}
+          <li><a href="{{ url_for('views.add_data') }}">Legg til data i db</a></li>
+          <li><a href="{{ url_for('views.add_kvalitetsmålinger') }}">Legg til kvalitetsmålinger db</a></li>
+          <li><a href="{{ url_for('views.aggreger') }}">Aggreger</a></li>
+        {% else %}
+        {% endif %}
+    </ul>
+    <ul>
+      <li><a href="{{ url_for('views.datakvalitet_kvalitetark') }}">Fullstendig kvalitetsuthenting</a></li>
+    </ul>
+  </div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Register kvalitet{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+    <label for="kvalitetsnivå_1">kvalitetsnivå_1</label>
+    <input name="kvalitetsnivå_1" id="kvalitetsnivå_1" required>
+    <label for="kvalitetsnivå_2">kvalitetsnivå_2</label>
+    <input name="kvalitetsnivå_2" id="kvalitetsnivå_2" required>
+    <label for="kvalitetsnivå_3">kvalitetsnivå_3</label>
+    <input name="kvalitetsnivå_3" id="kvalitetsnivå_3" required>
+    <label for="vegobjekttype_id">vegobjekttype_id</label>
+    <input name="vegobjekttype_id" id="vegobjekttype_id" required>
+    <label for="egenskapstype_id">egenskapstype_id</label>
+    <input name="egenskapstype_id" id="egenskapstype_id" required>
+    <label for="verdi">verdi</label>
+    <input name="verdi" id="verdi" required>
+    <label for="dato">dato</label>
+    <input name="dato" id="dato">
+    <label for="område_id">område_id</label>
+    <input name="område_id" id="område_id" required>
+    <input type="submit" value="Register kvalitet">
+  </form>
+{% endblock %}

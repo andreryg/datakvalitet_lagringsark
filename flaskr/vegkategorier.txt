@@ -1,0 +1,6 @@
+Europaveg; E
+Riksveg; R
+Fylkesveg; F
+Kommunalveg; K
+Privatveg; P
+Skogsbilveg; S

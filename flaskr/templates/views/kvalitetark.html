@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Datakvalitet{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <div>
+    <form method="post">
+      <label for="vegobjekttyper">Velg vegobjekttype:</label>
+      <select name="vegobjekttyper" id="vegobjekttyper">
+        {% for vegobjekttype in vegobjekttyper_ %}
+          <option value="{{ vegobjekttype[0] }}">{{ vegobjekttype[1] }}</option>
+        {% endfor %}
+      </select>
+      
+      <label for="områder">Velg område:</label>
+      <select name="områder" id="områder">
+        {% for område in områder %}
+          <option value="{{ område['id'] }}" {% if omrade_id is defined and område['id'] | string() == omrade_id | string() %}selected{% endif %}>{{ område['navn'] }}</option>
+        {% endfor %}
+      </select>
+      
+      <button type="submit" name="action" value="vt_område_filter">Velg</button>
+    </form>
+  </div>
+  {% if omrade_id %}
+  <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+    <div>
+      <label for="kvalitetselement-filter">Velg kvalitetselement:</label>
+      <select id="kvalitetselement-filter" name="kvalitetselement-filter">
+        <option value="0">Alle</option>
+        {% for kvalitetselement in kvalitetselementer %}
+        <option value="{{ kvalitetselement['id'] }}">{{ kvalitetselement['navn'] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="sammenlign-område">Sammenlign med område:</label>
+      <select id="sammenlign-område" name="sammenlign-område">
+        <option value = "0">Ingen</option>
+        {% for område in områder %}
+        <option value="{{ område['id'] }}">{{ område['navn'] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" name="action" id="område_kvalitetselement">Velg</button>
+  </div>
+  {% endif %}
+  {% if kvalitetsmålinger %}
+  <a href="#" id="downloadPdf">Last ned PDF</a>
+  <div id="pdf-content">
+    {% for kvid in kvalitetselement_relevant_ider | sort %}
+    <div id="canvas_div_{{ kvid }}" style="height: 0px">
+      <canvas id="{{ kvid }}"></canvas>
+    </div>
+    {% endfor %}
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.debug.js">window.jsPDF = window.jspdf.jsPDF;</script>
+  <script type="text/javascript">
+    const vegobjekttyper = {{ vegobjekttyper | tojson }};
+    const egenskapstyper = {{ egenskapstyper | tojson }};
+    const områder = {{ områder | tojson }};
+    const kvalitetselementer = {{ kvalitetselementer | tojson }};
+    const kvalitetselement_relevant_ider = {{ kvalitetselement_relevant_ider | tojson}};
+    const vtid = {{ vtid }};
+    const omrade_id = {{ omrade_id }};
+    const kvalitetsmålinger = {{ kvalitetsmålinger | tojson }};
+    const referanseverdier = {{ referanseverdier | tojson }};
+    const skala = {{ skala | tojson }};
+    const defaultSkala = skala.filter(dict => dict.id === 1);
+    const filteredVegobjekttyper = vegobjekttyper.filter(dict => dict.id === vtid);
+    var filteredEgenskapstyper = egenskapstyper.filter(dict => dict.vegobjekttype_id === vtid);
+    //if (kvid == 2) {
+    //  filteredEgenskapstyper = filteredEgenskapstyper.filter(dict => dict.viktighet === "PÅKREVD_IKKE_ABSOLUTT" || dict.viktighet === "PÅKREVD_ABSOLUTT")
+    //} 
+    const chartHeights = {'13': '1000px', '14':'500px','15':'500px','30':'300px','58':'300px','59':'300px','62':'300px','5':'500px','6':'500px','7':'300px'}
+
+    document.getElementById('område_kvalitetselement').addEventListener('click', function() {
+      for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
+        let chartStatus = Chart.getChart(kvalitetselement_relevant_ider[i-1]); // <canvas> id
+        if (chartStatus != undefined) {
+          chartStatus.destroy();
+        };
+      }
+      
+      var kvalitetselement_id = document.getElementById('kvalitetselement-filter').value;
+      var sammenlign_område_id = document.getElementById('sammenlign-område').value;
+      if(kvalitetselement_id == 0){
+        for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
+          document.getElementById(`canvas_div_${kvalitetselement_relevant_ider[i-1]}`).style.height = chartHeights[kvalitetselement_relevant_ider[i-1]];
+          createElement(kvalitetselement_relevant_ider[i-1], kvalitetselement_relevant_ider[i-1], sammenlign_område_id);
+        }
+      } else {
+        for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
+          document.getElementById(`canvas_div_${kvalitetselement_relevant_ider[i-1]}`).style.height = '0px';
+        }
+        document.getElementById(`canvas_div_${kvalitetselement_id}`).style.height = chartHeights[kvalitetselement_id]
+        createElement(kvalitetselement_id, kvalitetselement_id, sammenlign_område_id)
+      }
+    });
+    function createElement(chart_id, kvalitetselement_id, sammenlign_område_id){
+      var kvalitetselement_navn = kvalitetselementer.filter(dict => dict.id == kvalitetselement_id)[0]['navn'];
+        var data = prepareData(kvalitetsmålinger, referanseverdier, kvalitetselement_id, omrade_id);
+        var verdier = data[0];
+        var område = data[1];
+        var labelNames = data[2]
+        var finn_skala = skala.filter(dict => dict.vegobjekttype_id == vtid && dict.kvalitetselement_id == kvalitetselement_id);
+        if (finn_skala.length > 0) {
+          var valgt_skala = finn_skala
+        } else {
+          var valgt_skala = defaultSkala
+        }
+        if(sammenlign_område_id == 0){
+          drawGraph(chart_id, verdier, null, labelNames, område, null, 70, kvalitetselement_navn, valgt_skala);
+        } else {
+          console.log(sammenlign_område_id)
+          fetch("http://127.0.0.1:5727/add_område",
+          {
+            method: 'POST',
+            headers: {
+              'Content-type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify([vtid, sammenlign_område_id])
+          }).then(res => {
+            if (res.ok){
+              return res.json();
+            } else {
+              return null;
+            }
+          }).then(jsonResponse => {
+            if (jsonResponse) {
+              console.log(jsonResponse['sammenlign_kvalitetsmålinger']);
+              var data2 = prepareData(jsonResponse['sammenlign_kvalitetsmålinger'], jsonResponse['sammenlign_referanseverdier'], kvalitetselement_id, sammenlign_område_id);
+              var verdier2 = data2[0]
+              var område2 = data2[1]
+              var labelNames = data2[2]
+              drawGraph(chart_id, verdier, verdier2, labelNames, område, område2, 70, kvalitetselement_navn, valgt_skala)
+            }
+          }).catch((err) => console.error(err));
+        }
+    }
+
+    function prepareData(kvalitetsmålinger, referanseverdier, kvalitetselement_id, område_id){
+      var filteredKvalitetsmålinger = kvalitetsmålinger.filter(dict => dict.kvid == kvalitetselement_id);
+      var filteredReferanseverdier = referanseverdier.filter(dict => dict.kvid == kvalitetselement_id);
+      var referanseverdi = filteredReferanseverdier[0]['verdi']
+      var verdier = filteredKvalitetsmålinger.map(dict => (dict['verdi'] / referanseverdi * 100).toFixed(2));
+      var område = områder.filter(dict => dict.id == område_id)[0]['navn']
+    
+      filteredEgenskapstyper = egenskapstyper.filter(dict => dict.vegobjekttype_id === vtid);
+      if (kvalitetselement_id == 14){
+        filteredEgenskapstyper = filteredEgenskapstyper.filter(dict => dict.viktighet === "PÅKREVD_IKKE_ABSOLUTT" || dict.viktighet === "PÅKREVD_ABSOLUTT")
+      } else if (kvalitetselement_id == 15){
+        filteredEgenskapstyper = filteredEgenskapstyper.filter(dict => dict.viktighet === "BETINGET")
+      } else if (['30','58','59','62'].includes(kvalitetselement_id)){
+        filteredEgenskapstyper = [];
+      }
+      var labels = filteredVegobjekttyper.concat(filteredEgenskapstyper);
+      var labelNames = labels.map(dict => dict['navn']);
+      return [verdier, område, labelNames]
+    }
+    
+    function drawGraph(chart_id, dataset1, dataset2, labels, område1, område2, kravverdi, kvalitetselement_navn, skala){
+      var ctx = document.getElementById(chart_id).getContext("2d");
+      document.getElementById(chart_id).parentElement.style.marginBottom = "50px";
+
+      var font_weights = ['bold']
+      for(var i=1; i<dataset1.length; i++){
+      font_weights[i] = 'normal';
+      }
+
+      const draw_background_plugin = {
+      beforeDraw(chart){
+        const ctx = chart.ctx;
+        const yAxis = chart.scales.y;
+        const xMin = yAxis.left;
+        const xMax = yAxis.right;
+        const top = yAxis.top;
+        const bottom = yAxis.bottom;
+        const xAxis = chart.scales.x;
+        const y100 = xAxis.getPixelForValue(100);
+        const y0 = xAxis.getPixelForValue(0);
+        var sep_1 = Number(skala[0]['sep_1'])
+        var sep_2 = Number(skala[0]['sep_2'])
+        var sep_3 = Number(skala[0]['sep_3'])
+        var sep_4 = Number(skala[0]['sep_4'])
+        var ya = xAxis.getPixelForValue(sep_1);
+        var yb = xAxis.getPixelForValue(sep_2);
+        var yc = xAxis.getPixelForValue(sep_3);
+        var yd = xAxis.getPixelForValue(sep_4);
+        const colours = ['#ffcccc', '#fccebc', '#f3d2b0', '#e2d8a9', '#CCDDAA']
+        for (var [yMin, yMax, colour] of
+        [[y0, yd, colours[0]],
+        [yd, yc, colours[1]],
+        [yc, yb, colours[2]],
+        [yb, ya, colours[3]],
+        [ya, y100, colours[4]]]) {
+          ctx.fillStyle = colour;
+          ctx.fillRect(yMin, top, yMax-yMin, bottom-top);
+        }
+      }
+      };
+      const draw_standard_line = {
+      afterDraw(chart){
+        const ctx = chart.ctx;
+        const xAxis = chart.scales.y;
+        const bottom = xAxis.bottom;
+        const top = xAxis.top;
+        const yAxis = chart.scales.x;
+        const start = yAxis.getPixelForValue(kravverdi);
+        var colour = '#000000';
+        ctx.fillStyle = colour;
+        ctx.fillRect(start-1, top, 2, bottom-top);
+      }
+      };
+
+      const diagram_data = {
+      labels: labels,
+      datasets: [{
+        label: område1,
+        backgroundColor: '#225555',
+        borderColor: '#000000',
+        data: dataset1,
+      },
+      ...(dataset2 && område2 ? [{
+        label: område2,
+        backgroundColor: '#555555',
+        borderColor: '#000000',
+        data: dataset2,
+      }] : [])]
+      };
+      const diagram_config = {
+      type: 'bar',
+      data: diagram_data,
+      options: {
+        indexAxis: 'y',
+        elements: {
+        bar: {
+          borderWidth: 1,
+        }
+        },
+        responsive: true,
+        barPercentage: 1,
+        scales: {
+        x: {
+          min: 0,
+          max: 100,
+          ticks: {
+          display: true,
+          autoSkip: false,
+          font: {
+        weight: 'bold',
+        size: 16
+          },
+          callback: function(value, index, ticks) {
+        return value + '%';
+          }
+          }
+        },
+        y: {
+          ticks: {
+          display: true,
+          autoSkip: false,
+          font: {
+        weight: font_weights,
+        size: 16
+          }
+          }
+        }
+        },
+        maintainAspectRatio: false,
+        animation: {
+        duration: 0 
+        },
+        plugins: {
+        title: {
+          display: true,
+          text: kvalitetselement_navn,
+          font: {
+          size: 18
+          }
+        }
+        }
+      },
+      plugins: [draw_background_plugin]//draw_standard_line
+      }
+      const diagram = new Chart(
+      ctx,
+      diagram_config
+      )
+    }
+  </script>
+  <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script>
+    $('#downloadPdf').click(function(event) {
+      console.log("test")
+      const { jsPDF } = window.jspdf;
+      // get size of report page
+      var reportPageHeight = $('#pdf-content').innerHeight();
+      var reportPageWidth = $('#pdf-content').innerWidth();
+      
+      // create a new canvas object that we will populate with all other canvas objects
+      var pdfCanvas = $('<canvas />').attr({
+        id: "canvaspdf",
+        width: reportPageWidth,
+        height: reportPageHeight
+      });
+      
+      // keep track canvas position
+      var pdfctx = $(pdfCanvas)[0].getContext('2d');
+      var pdfctxX = 0;
+      var pdfctxY = 0;
+      var buffer = 100;
+      
+      // for each chart.js chart
+      $("canvas").each(function(index) {
+        // get the chart height/width
+        var canvasHeight = $(this).innerHeight();
+        var canvasWidth = $(this).innerWidth();
+        
+        // draw the chart into the new canvas
+        pdfctx.drawImage($(this)[0], pdfctxX, pdfctxY, canvasWidth, canvasHeight);
+        pdfctxX += canvasWidth + buffer;
+        
+        // our report page is in a grid pattern so replicate that in the new canvas
+        if (index % 2 === 1) {
+          pdfctxX = 0;
+          pdfctxY += canvasHeight + buffer;
+        }
+      });
+      
+      // create new pdf and add our new canvas as an image
+      var pdf = new jsPDF('l', 'pt', [reportPageWidth, reportPageHeight]);
+      pdf.addImage($(pdfCanvas)[0], 'PNG', 0, 0);
+      
+      // download the pdf
+      pdf.save('test-pdf.pdf');
+    });
+  </script>
+  {% endif %}
+{% endblock %}

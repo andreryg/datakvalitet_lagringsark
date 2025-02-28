@@ -1,0 +1,64 @@
+Generell; 1; 1; 1
+Punktobjekt; 1; 1; 2
+Strekningsobjekt; 1; 1; 3
+Unik registrering; 1; 1; 4
+Unik registrering, Punktobjekt; 1; 1; 5
+Unik registrering, Strekningsobjekt; 1; 1; 6
+Dekningsgrad; 1; 1; 7
+Administrativt vegobjekt mot skilt; 1; 2; 1
+Generell; 1; 3; 1
+Aldersfordeling; 1; 5; 1
+Oppdateringssyklus; 1; 5; 2
+Nytt vegprosjekt; 1; 5; 3
+Generell; 2; 1; 1
+Påkrevd egenskapsverdi; 2; 1; 2
+Betinga egenskapsverdi; 2; 1; 3
+Betinga egenskapsverdi, utledbar betingelse; 2; 1; 4
+Betinga egenskapsverdi, ikke utledbar betingelse; 2; 1; 5
+Administrativt vegobjekt mot skilt; 2; 2; 1
+Skilt mot administrativt vegobjekt; 2; 2; 2
+Generell; 2; 3; 1
+Tillatt verdi; 2; 3; 2
+Dato; 2; 3; 3
+Tekst; 2; 3; 4
+Tall; 2; 3; 5
+Lengde; 2; 3; 6
+Areal; 2; 3; 7
+Etableringsår; 2; 3; 8
+Generell; 3; 1; 1
+Punktgeometri; 3; 1; 2
+Linjegeometri; 3; 1; 3
+Flategeometri; 3; 1; 4
+Ønsket type geometri; 3; 1; 5
+Kvalitetsinfo; 3; 1; 6
+Datafangstmetode grunnriss; 3; 1; 7
+Nøyaktighet grunnriss; 3; 1; 8
+Z-koordinat; 3; 1; 9
+Forelder; 3; 2; 1
+Generell; 3; 3; 1
+Grunnriss (X,Y); 3; 3; 2
+Høydereferanse; 3; 3; 3
+Punkttetthet; 3; 3; 4
+Grunnriss (X,Y), Reell grenseverdi; 3; 4; 1
+Grunnriss (X,Y), Teoretisk grenseverdi; 3; 4; 2
+Høyde (Z); 3; 4; 3
+Generell; 4; 1; 1
+Egengeometri, punkt; 4; 2; 1
+Egengeometri, linje/flate; 4; 2; 2
+Morobjekt; 4; 2; 3
+Generell; 4; 3; 1
+Vegkategori; 4; 3; 2
+Type veg; 4; 3; 3
+Detaljeringsnivå; 4; 3; 4
+Konnekteringslenke; 4; 3; 5
+Sideposisjon; 4; 3; 6
+Kjørefelt; 4; 3; 7
+Generell; 4; 4; 1
+Meterverdi(er); 4; 4; 2
+Generell; 5; 1; 1
+Morobjekt; 5; 1; 2
+Morobjekt, må ha mor; 5; 1; 3
+Morobjekt, to eller flere mødre; 5; 1; 4
+Datterobjekt; 5; 1; 5
+Spesifikt morobjekt; 5; 1; 6
+Spesifikt datterobjekt; 5; 1; 7

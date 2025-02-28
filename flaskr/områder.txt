@@ -1,0 +1,265 @@
+Norge; 0; 0; 0
+Europaveg; 0; 0; 1
+Riksveg; 0; 0; 2
+Fylkesveg; 0; 0; 3
+Kommunalveg; 0; 0; 4
+Privatveg; 0; 0; 5
+Skogsveg; 0; 0; 6
+Oslo; 3; 0; 0
+Rogaland; 11; 0; 0
+Møre og Romsdal; 15; 0; 0
+Nordland; 18; 0; 0
+Østfold; 31; 0; 0
+Akershus; 32; 0; 0
+Buskerud; 33; 0; 0
+Innlandet; 34; 0; 0
+Vestfold; 39; 0; 0
+Telemark; 40; 0; 0
+Agder; 42; 0; 0
+Vestland; 46; 0; 0
+Trøndelag; 50; 0; 0
+Troms; 55; 0; 0
+Finnmark; 56; 0; 0
+Oslo Europaveg; 3; 0; 1
+Oslo Riksveg; 3; 0; 2
+Oslo Kommunalveg; 3; 0; 4
+Oslo Privatveg; 3; 0; 5
+Oslo Skogsveg; 3; 0; 6
+Rogaland Europaveg; 11; 0; 1
+Rogaland Riksveg; 11; 0; 2
+Rogaland Fylkesveg; 11; 0; 3
+Rogaland Kommunalveg; 11; 0; 4
+Rogaland Privatveg; 11; 0; 5
+Rogaland Skogsveg; 11; 0; 6
+Møre og Romsdal Europaveg; 15; 0; 1
+Møre og Romsdal Riksveg; 15; 0; 2
+Møre og Romsdal Fylkesveg; 15; 0; 3
+Møre og Romsdal Kommunalveg; 15; 0; 4
+Møre og Romsdal Privatveg; 15; 0; 5
+Møre og Romsdal Skogsveg; 15; 0; 6
+Nordland Europaveg; 18; 0; 1
+Nordland Riksveg; 18; 0; 2
+Nordland Fylkesveg; 18; 0; 3
+Nordland Kommunalveg; 18; 0; 4
+Nordland Privatveg; 18; 0; 5
+Nordland Skogsveg; 18; 0; 6
+Østfold Europaveg; 31; 0; 1
+Østfold Riksveg; 31; 0; 2
+Østfold Fylkesveg; 31; 0; 3
+Østfold Kommunalveg; 31; 0; 4
+Østfold Privatveg; 31; 0; 5
+Østfold Skogsveg; 31; 0; 6
+Akershus Europaveg; 32; 0; 1
+Akershus Riksveg; 32; 0; 2
+Akershus Fylkesveg; 32; 0; 3
+Akershus Kommunalveg; 32; 0; 4
+Akershus Privatveg; 32; 0; 5
+Akershus Skogsveg; 32; 0; 6
+Buskerud Europaveg; 33; 0; 1
+Buskerud Riksveg; 33; 0; 2
+Buskerud Fylkesveg; 33; 0; 3
+Buskerud Kommunalveg; 33; 0; 4
+Buskerud Privatveg; 33; 0; 5
+Buskerud Skogsveg; 33; 0; 6
+Innlandet Europaveg; 34; 0; 1
+Innlandet Riksveg; 34; 0; 2
+Innlandet Fylkesveg; 34; 0; 3
+Innlandet Kommunalveg; 34; 0; 4
+Innlandet Privatveg; 34; 0; 5
+Innlandet Skogsveg; 34; 0; 6
+Vestfold Europaveg; 39; 0; 1
+Vestfold Riksveg; 39; 0; 2
+Vestfold Fylkesveg; 39; 0; 3
+Vestfold Kommunalveg; 39; 0; 4
+Vestfold Privatveg; 39; 0; 5
+Vestfold Skogsveg; 39; 0; 6
+Telemark Europaveg; 40; 0; 1
+Telemark Riksveg; 40; 0; 2
+Telemark Fylkesveg; 40; 0; 3
+Telemark Kommunalveg; 40; 0; 4
+Telemark Privatveg; 40; 0; 5
+Telemark Skogsveg; 40; 0; 6
+Agder Europaveg; 42; 0; 1
+Agder Riksveg; 42; 0; 2
+Agder Fylkesveg; 42; 0; 3
+Agder Kommunalveg; 42; 0; 4
+Agder Privatveg; 42; 0; 5
+Agder Skogsveg; 42; 0; 6
+Vestland Europaveg; 46; 0; 1
+Vestland Riksveg; 46; 0; 2
+Vestland Fylkesveg; 46; 0; 3
+Vestland Kommunalveg; 46; 0; 4
+Vestland Privatveg; 46; 0; 5
+Vestland Skogsveg; 46; 0; 6
+Trøndelag Europaveg; 50; 0; 1
+Trøndelag Riksveg; 50; 0; 2
+Trøndelag Fylkesveg; 50; 0; 3
+Trøndelag Kommunalveg; 50; 0; 4
+Trøndelag Privatveg; 50; 0; 5
+Trøndelag Skogsveg; 50; 0; 6
+Troms Europaveg; 55; 0; 1
+Troms Riksveg; 55; 0; 2
+Troms Fylkesveg; 55; 0; 3
+Troms Kommunalveg; 55; 0; 4
+Troms Privatveg; 55; 0; 5
+Troms Skogsveg; 55; 0; 6
+Finnmark Europaveg; 56; 0; 1
+Finnmark Riksveg; 56; 0; 2
+Finnmark Fylkesveg; 56; 0; 3
+Finnmark Kommunalveg; 56; 0; 4
+Finnmark Privatveg; 56; 0; 5
+Finnmark Skogsveg; 56; 0; 6
+EV6; 0; 0; 7
+EV8; 0; 0; 8
+EV10; 0; 0; 9
+EV12; 0; 0; 10
+EV14; 0; 0; 11
+EV16; 0; 0; 12
+EV18; 0; 0; 13
+EV39; 0; 0; 14
+EV45; 0; 0; 15
+EV69; 0; 0; 16
+EV75; 0; 0; 17
+EV105; 0; 0; 18
+EV134; 0; 0; 19
+EV136; 0; 0; 20
+RV2; 0; 0; 21
+RV3; 0; 0; 22
+RV4; 0; 0; 23
+RV5; 0; 0; 24
+RV7; 0; 0; 25
+RV9; 0; 0; 26
+RV13; 0; 0; 27
+RV15; 0; 0; 28
+RV19; 0; 0; 29
+RV22; 0; 0; 30
+RV25; 0; 0; 31
+RV36; 0; 0; 32
+RV41; 0; 0; 33
+RV52; 0; 0; 34
+RV70; 0; 0; 35
+RV73; 0; 0; 36
+RV77; 0; 0; 37
+RV80; 0; 0; 38
+RV83; 0; 0; 39
+RV85; 0; 0; 40
+RV92; 0; 0; 41
+RV94; 0; 0; 42
+RV110; 0; 0; 43
+RV150; 0; 0; 44
+RV159; 0; 0; 45
+RV162; 0; 0; 46
+RV163; 0; 0; 47
+RV191; 0; 0; 48
+RV204; 0; 0; 49
+RV226; 0; 0; 50
+RV291; 0; 0; 51
+RV350; 0; 0; 52
+RV354; 0; 0; 53
+RV400; 0; 0; 54
+RV426; 0; 0; 55
+RV444; 0; 0; 56
+RV509; 0; 0; 57
+RV555; 0; 0; 58
+RV580; 0; 0; 59
+RV651; 0; 0; 60
+RV658; 0; 0; 61
+RV706; 0; 0; 62
+RV827; 0; 0; 63
+Oslo EV6; 3; 0; 7
+Oslo EV18; 3; 0; 13
+Oslo RV4; 3; 0; 23
+Oslo RV150; 3; 0; 44
+Oslo RV159; 3; 0; 45
+Oslo RV162; 3; 0; 46
+Oslo RV163; 3; 0; 47
+Oslo RV191; 3; 0; 48
+Rogaland EV39; 11; 0; 14
+Rogaland EV134; 11; 0; 19
+Rogaland RV13; 11; 0; 27
+Rogaland RV426; 11; 0; 55
+Rogaland RV444; 11; 0; 56
+Rogaland RV509; 11; 0; 57
+Møre og Romsdal EV39; 15; 0; 14
+Møre og Romsdal EV136; 15; 0; 20
+Møre og Romsdal RV70; 15; 0; 35
+Møre og Romsdal RV651; 15; 0; 60
+Møre og Romsdal RV658; 15; 0; 61
+Nordland EV6; 18; 0; 7
+Nordland EV10; 18; 0; 9
+Nordland EV12; 18; 0; 10
+Nordland RV73; 18; 0; 36
+Nordland RV77; 18; 0; 37
+Nordland RV80; 18; 0; 38
+Nordland RV85; 18; 0; 40
+Nordland RV827; 18; 0; 63
+Østfold EV6; 31; 0; 7
+Østfold EV18; 31; 0; 13
+Østfold RV22; 31; 0; 30
+Østfold RV110; 31; 0; 43
+Østfold RV204; 31; 0; 49
+Akershus EV6; 32; 0; 7
+Akershus EV16; 32; 0; 12
+Akershus EV18; 32; 0; 13
+Akershus EV134; 32; 0; 19
+Akershus RV4; 32; 0; 23
+Akershus RV22; 32; 0; 30
+Akershus RV159; 32; 0; 45
+Akershus RV163; 32; 0; 47
+Akershus RV226; 32; 0; 50
+Buskerud EV16; 33; 0; 12
+Buskerud EV18; 33; 0; 13
+Buskerud EV134; 33; 0; 19
+Buskerud RV7; 33; 0; 25
+Buskerud RV52; 33; 0; 34
+Buskerud RV291; 33; 0; 51
+Buskerud RV350; 33; 0; 52
+Innlandet EV6; 34; 0; 7
+Innlandet EV16; 34; 0; 12
+Innlandet EV136; 34; 0; 20
+Innlandet RV2; 34; 0; 21
+Innlandet RV3; 34; 0; 22
+Innlandet RV4; 34; 0; 23
+Innlandet RV15; 34; 0; 28
+Innlandet RV25; 34; 0; 31
+Vestfold EV18; 39; 0; 13
+Vestfold RV19; 39; 0; 29
+Vestfold RV400; 39; 0; 54
+Telemark EV18; 40; 0; 13
+Telemark EV134; 40; 0; 19
+Telemark RV9; 40; 0; 26
+Telemark RV36; 40; 0; 32
+Telemark RV41; 40; 0; 33
+Telemark RV354; 40; 0; 53
+Agder EV18; 42; 0; 13
+Agder EV39; 42; 0; 14
+Agder RV9; 42; 0; 26
+Agder RV41; 42; 0; 33
+Vestland EV16; 46; 0; 12
+Vestland EV39; 46; 0; 14
+Vestland EV134; 46; 0; 19
+Vestland RV5; 46; 0; 24
+Vestland RV13; 46; 0; 27
+Vestland RV15; 46; 0; 28
+Vestland RV52; 46; 0; 34
+Vestland RV555; 46; 0; 58
+Vestland RV580; 46; 0; 59
+Vestland RV651; 46; 0; 60
+Trøndelag EV6; 50; 0; 7
+Trøndelag EV14; 50; 0; 11
+Trøndelag EV39; 50; 0; 14
+Trøndelag RV3; 50; 0; 22
+Trøndelag RV70; 50; 0; 35
+Trøndelag RV706; 50; 0; 62
+Troms EV6; 55; 0; 7
+Troms EV8; 55; 0; 8
+Troms EV10; 55; 0; 9
+Troms RV83; 55; 0; 39
+Troms RV85; 55; 0; 40
+Finnmark EV6; 56; 0; 7
+Finnmark EV45; 56; 0; 15
+Finnmark EV69; 56; 0; 16
+Finnmark EV75; 56; 0; 17
+Finnmark EV105; 56; 0; 18
+Finnmark RV92; 56; 0; 41
+Finnmark RV94; 56; 0; 42
