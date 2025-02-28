@@ -1,1 +1,2 @@
-# datakvalitet_lagringsark
+# Datakvalitet lagringsark
+Prøveprosjekt for lagringsark for datakvalitet.
