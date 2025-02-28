@@ -2,6 +2,7 @@ import requests
 from flaskr.db import get_db
 from flaskr.last_ned_datasett import hent_datasett
 import tqdm
+import ast
 
 class Automatisk_registrer_kvalitet():
     def __init__(self, vegobjekttype_id):
@@ -14,22 +15,27 @@ class Automatisk_registrer_kvalitet():
         ).fetchall()
         self.egenskapstyper = [dict(row) for row in self.egenskapstyper]
 
-        self.df = hent_datasett(vegobjekttype_id, 'inkluder=alle')
-        self.df = self.df.rename(columns={"lokasjon.fylker":"fylke", 
+        self.df = hent_datasett(vegobjekttype_id, 'inkluder=alle&vegsystemreferanse=E,R,F,K')
+        self.df = self.df.rename(columns={"lokasjon.fylker":"fylke",
+                                          "lokasjon.kommuner":"kommune",
                                           "lokasjon.vegsystemreferanser":"vegsystemreferanse", 
                                           "relasjoner.foreldre":"foreldre", 
                                           "relasjoner.barn":"barn"})
+        self.df['egenskaper'] = self.df['egenskaper'].apply(ast.literal_eval)
 
-        """ db = get_db()
-        område = db.execute(
-            "SELECT * FROM område JOIN vegsystem ON område.vegsystem_id = vegsystem.id JOIN vegkategori ON vegsystem.vegkategori_id = vegkategori.id WHERE område.id = ?",
-            (self.område_id,)
-            ).fetchone()
-        self.fylke_id = område["fylke_id"]
-        if område["vegnummer"]:
-            self.vegsystem = område["kortnavn"] + område["fase"] + str(område["vegnummer"])
-        else:
-            self.vegsystem = område["kortnavn"] + område["fase"] """
+
+
+        #Se på hvilke vegstrekninger som inngår i self.df
+        #for hver vegstrekning i self.df: 
+            #filtrer self.df på vegstrekningen
+            #for hver kvalitetselement:
+                #Lagre referanseverdi
+                #Finn kvaliteten ved å hente funksjonen som tilsvarer kvalitetselementet.
+                #(Funksjoner returnerer en verdi hvis kvalitet lagres på objekttypenivå)
+                #(Funksjoner returnerer en dictionary hvis kvalitet lagres på egenskapstypenivå (et_id er key, kvalitet er value))
+                #Lagre kvaliteten
+        #Lagre kvalitetene i databasen
+
 
     def hent_kvalitetsmåling(self):
         db = get_db()
@@ -201,19 +207,7 @@ class Automatisk_registrer_kvalitet():
         return True
 
 if __name__ == "__main__":
-    db = get_db()
-    vegobjekttyper = db.execute(
-        "SELECT vegobjekttype.id as vt_id, egenskapstype.id as et_id FROM vegobjekttype JOIN egenskapstype ON vegobjekttype.id = egenskapstype.vegobjekttype_id ORDER BY vt_id, et_id LIMIT 10"
-        ).fetchall()
-    områder = db.execute(
-        "SELECT * FROM område WHERE fylke_id IS NOT NULL AND vegsystem_id > 6"
-        ).fetchall()
-
-    for område in områder:
-        for vegobjekttype in vegobjekttyper:
-            kvalitet = Automatisk_registrer_kvalitet(2, 1, 1, område["id"], vegobjekttype["vt_id"], vegobjekttype["et_id"])
-            kvalitet.hent_kvalitet()
-            kvalitet.hent_referanseverdi()
-            kvalitet.registrer_kvalitet()
-    
-    db.commit()
+    kvalitet = Automatisk_registrer_kvalitet(470)
+    kvalitet.hent_kvalitet()
+    kvalitet.hent_referanseverdi()
+    kvalitet.registrer_kvalitet()

@@ -1,5 +1,5 @@
 Vegobjekter
 Egenskaper
 Egengeometri
-Stedfesting til vegnett
+Stedfesting
 Relasjoner

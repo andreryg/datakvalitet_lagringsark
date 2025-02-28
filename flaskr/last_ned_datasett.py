@@ -33,7 +33,8 @@ def hent_datasett(nvdbid, query):
     return df
 
 def main():
-    hent_datasett(212, "inkluder=alle&alle_versjoner=true")
+    df = hent_datasett(470, "inkluder=alle&alle_versjoner=false&vegsystemreferanse=E,R,F,K")
+    df.to_excel("test.xlsx", index=False)
     
 if __name__ == "__main__":
     main()
