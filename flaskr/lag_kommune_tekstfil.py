@@ -6,6 +6,7 @@ def main():
     kommuner_df = kommuner_df.rename(columns={"EGS.KOMMUNENUMMER.11769": "id", "EGS.KOMMUNENAVN.11770": "navn"})
     kommuner_df = kommuner_df[pd.notna(kommuner_df['id'])]
     kommuner_df['fylke_id'] = kommuner_df.apply(lambda x: int(str(x['id'])[:2]), axis=1)
+    kommuner_df['fylke_id'] = kommuner_df['fylke_id'].apply(lambda x: x/10 if x == 30 else x)
     kommuner_df.to_excel("flaskr/kommuner.xlsx", index=False)
 
 if __name__ == "__main__":

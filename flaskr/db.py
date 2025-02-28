@@ -10,6 +10,7 @@ import datetime
 import click
 from flask import current_app, g
 import pandas as pd
+import tqdm
 
 def get_db():
     if 'db' not in g:
@@ -29,7 +30,7 @@ def close_db(e = None):
 
 def fyll_inn_tabeller():
     db = get_db()
-    vegstrekninger_df = pd.read_excel("flaskr/alle_verstrekninger.xlsx")
+    vegstrekninger_df = pd.read_excel("flaskr/alle_vegstrekninger.xlsx")
     test_result = db.execute("SELECT * FROM vegkategori limit 1")
     if not test_result.fetchone():
         print("Fyller inn vegkategori")
@@ -43,10 +44,12 @@ def fyll_inn_tabeller():
     test_result = db.execute("SELECT * FROM vegsystem limit 1")
     if not test_result.fetchone():
         print("Fyller inn vegsystem")
-        df = vegstrekninger_df[['vegkategori', 'vegfase', 'vegnummer']]
+        vegsystem_df = vegstrekninger_df[['vegkategori', 'vegfase', 'vegnummer']]
+        vegsystem_df = vegsystem_df.drop_duplicates()
+        df = vegsystem_df.copy()
         df['vegkategori_id'] = df['vegkategori'].apply(lambda x: 1 if x == "E" else 2 if x == "R" else 3 if x == "F" else 4 if x == "K" else 0)
         df = df[['vegkategori_id', 'vegfase', 'vegnummer']]
-        df = df.drop_duplicates()
+        
         db.executemany(
             "INSERT INTO vegsystem (vegkategori_id, fase, vegnummer) VALUES (?, ?, ?)",
             df.values.tolist()
@@ -60,6 +63,15 @@ def fyll_inn_tabeller():
         db.executemany(
             "INSERT INTO fylke (id, navn) VALUES (?, ?)",
             fylker
+            )
+        
+    test_result = db.execute("SELECT * FROM kommune limit 1")
+    if not test_result.fetchone():
+        print("Fyller inn kommune")
+        kommune_df = pd.read_excel("flaskr/kommuner.xlsx")
+        db.executemany(
+            "INSERT INTO kommune (id, navn, fylke_id) VALUES (?, ?, ?)",
+            kommune_df[['id', 'navn', 'fylke_id']].values.tolist()
             )
         
     test_result = db.execute("SELECT * FROM kvalitetsnivå_1 limit 1")
@@ -104,11 +116,17 @@ def fyll_inn_tabeller():
         
     test_result = db.execute("SELECT * FROM vegstrekning limit 1")
     if not test_result.fetchone():
-        vegstrekninger_df['vegsystem_id'] = vegstrekninger_df.apply(lambda x: db.execute("SELECT id FROM vegsystem WHERE vegkategori_id = ? AND fase = ? AND vegnummer = ?", (1 if x['vegkategori'] == "E" else 2 if x['vegkategori'] == "R" else 3 if x['vegkategori'] == "F" else 4 if x['vegkategori'] == "K" else 0, x['vegfase'], x['vegnummer'])).fetchone()[0], axis=1)
-        vegstrekninger_df['navn'] = vegstrekninger_df.apply(lambda x: f"{x['vegsystem']} {x['strekning']}", axis=1)
+        print("Fyller inn vegstrekning")
+        tqdm.tqdm.pandas()
+        vegsystem_df = vegsystem_df.reset_index(drop=True).reset_index()
+        print(vegsystem_df.head(15))
+        vegsystem_dict = vegsystem_df.set_index(['vegkategori', 'vegfase', 'vegnummer']).to_dict('index')
+        vegstrekninger_df['vegsystem_id'] = vegstrekninger_df.progress_apply(lambda x: vegsystem_dict.get((x['vegkategori'], x['vegfase'], x['vegnummer']), {}).get('index', None)+1, axis=1)
+        vegstrekninger_df['navn'] = vegstrekninger_df.progress_apply(lambda x: f"{x['vegsystem']} {x['strekning']}", axis=1)
+        print(vegstrekninger_df.head(15))
         db.executemany(
-            "INSERT INTO vegstrekning (vegsystem_id, navn) VALUES (?, ?)",
-            vegstrekninger_df[['vegsystem_id', 'navn']].values.tolist()
+            "INSERT INTO vegstrekning (vegsystem_id, vegstrekning, navn, fylke_id, kommune_id) VALUES (?, ?, ?, ?, ?)",
+            vegstrekninger_df[['vegsystem_id', 'strekning', 'navn', 'fylke_id', 'kommune_id']].values.tolist()
             )
 
     db.commit()
