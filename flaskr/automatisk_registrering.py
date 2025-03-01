@@ -3,8 +3,10 @@ from flaskr.db import get_db
 from flaskr.last_ned_datasett import hent_datasett
 import tqdm
 import ast
+import pandas as pd
 
 class Automatisk_registrer_kvalitet():
+    pd.options.mode.chained_assignment = None  # default='warn'
     def __init__(self, vegobjekttype_id):
         self.vegobjekttype_id = vegobjekttype_id
         db = get_db()
@@ -15,15 +17,41 @@ class Automatisk_registrer_kvalitet():
         ).fetchall()
         self.egenskapstyper = [dict(row) for row in self.egenskapstyper]
 
+        kvalitetselementer = db.execute(
+            """select kvalitetselement.id, lower(kvalitetsnivå_1.navn) as kv_1, lower(kvalitetsnivå_2.navn) as kv_2, lower(kvalitetselement.navn) as kv_3 from kvalitetselement
+            join kvalitetsnivå_1 on kvalitetselement.kvalitetsnivå_1 = kvalitetsnivå_1.id
+            join kvalitetsnivå_2 on kvalitetselement.kvalitetsnivå_2 = kvalitetsnivå_2.id"""
+        ).fetchall()
+        kvalitetselementer = [dict(row) for row in kvalitetselementer]
+
         self.df = hent_datasett(vegobjekttype_id, 'inkluder=alle&vegsystemreferanse=E,R,F,K')
         self.df = self.df.rename(columns={"lokasjon.fylker":"fylke",
                                           "lokasjon.kommuner":"kommune",
                                           "lokasjon.vegsystemreferanser":"vegsystemreferanse", 
                                           "relasjoner.foreldre":"foreldre", 
                                           "relasjoner.barn":"barn"})
-        self.df['egenskaper'] = self.df['egenskaper'].apply(ast.literal_eval)
 
+        self.df['vegstrekning'] = self.df['vegsystemreferanse'].apply(lambda x: [i.get('kortform').split("D")[0] for i in x])
+        vegstrekninger = self.df['vegstrekning'].explode().unique().tolist()
 
+        for vegstrekning in vegstrekninger:
+            self.temp_df = self.df[self.df['vegstrekning'].apply(lambda x: vegstrekning in x)]
+            if vegstrekning[0] == "F":
+                fylker = self.temp_df['fylke'].explode().unique().tolist()
+                for fylke_id in fylker:
+                    self.temp_temp_df = self.temp_df[self.temp_df['fylke'].apply(lambda x: fylke_id in x)]
+                    for kvalitetselement in kvalitetselementer:
+                        self.hent_kvalitet(kvalitetselement, vegstrekning, fylke_id, 0)
+            elif vegstrekning[0] == "K":
+                kommuner = self.temp_df['kommune'].explode().unique().tolist()
+                for kommune_id in kommuner:
+                    self.temp_temp_df = self.temp_df[self.temp_df['kommune'].apply(lambda x: kommune_id in x)]
+                    for kvalitetselement in kvalitetselementer:
+                        self.hent_kvalitet(kvalitetselement, vegstrekning, 0, kommune_id)
+            else:
+                self.temp_temp_df = self.temp_df
+                for kvalitetselement in kvalitetselementer:
+                    self.hent_kvalitet(kvalitetselement, vegstrekning, 0, 0)
 
         #Se på hvilke vegstrekninger som inngår i self.df
         #for hver vegstrekning i self.df: 
@@ -36,6 +64,28 @@ class Automatisk_registrer_kvalitet():
                 #Lagre kvaliteten
         #Lagre kvalitetene i databasen
 
+        #Et problem her at jeg må finne riktig strekning id mtp fylke og kommune.
+    def hent_kvalitet(self, kvalitetselement, vegstrekning, fylke, kommune):
+        self.referanseverdi = self.temp_temp_df.shape[0]
+        try:
+            module = __import__(f'flaskr.kvalitetskontroller.{kvalitetselement.get("kv_1")}.{kvalitetselement.get("kv_2")}.{kvalitetselement.get("kv_3")}', fromlist=[''])
+            function = getattr(module, kvalitetselement.get("kv_1")+"_"+kvalitetselement.get("kv_2")+"_"+kvalitetselement.get("kv_3")+"_kvalitet")
+        except:
+            return False
+        self.kvalitetsmåling = function(self.temp_temp_df, self.egenskapstyper)
+        db = get_db()
+        vegstrekning_id = db.execute(
+            "SELECT id FROM vegstrekning WHERE fylke_id = ? AND kommune_id = ? AND navn = ?",
+            (fylke if kommune == 0 else (int(str(kommune)[:2]) if int(str(kommune)[:2]) != 30 else int(str(kommune)[:1])), kommune, vegstrekning)
+        ).fetchone()
+        if vegstrekning_id:
+            vegstrekning_id = vegstrekning_id[0]
+        else:
+            vegstrekning_id = None
+        if vegstrekning_id == None:
+            print(vegstrekning, fylke, kommune)
+        #print(kvalitetselement['id'], vegstrekning_id, self.referanseverdi, self.kvalitetsmåling)
+        #self.registrer_kvalitet(kvalitetselement['id'], vegstrekning_id, 0)
 
     def hent_kvalitetsmåling(self):
         db = get_db()
@@ -101,7 +151,7 @@ class Automatisk_registrer_kvalitet():
                     self.antall = int(self.temp_df['barn'].notnull().sum())
                     self.registrer_kvalitet(kvalitetselement['id'], område['id'], 0)
 
-    def hent_kvalitet(self):
+    def hent_kvalitest(self):
         # Hente kvalitet fra api
         if self.kvalitetselement_id == 1: #Har egenskapsverdi
             # Har egenskapsverdi
@@ -208,6 +258,3 @@ class Automatisk_registrer_kvalitet():
 
 if __name__ == "__main__":
     kvalitet = Automatisk_registrer_kvalitet(470)
-    kvalitet.hent_kvalitet()
-    kvalitet.hent_referanseverdi()
-    kvalitet.registrer_kvalitet()

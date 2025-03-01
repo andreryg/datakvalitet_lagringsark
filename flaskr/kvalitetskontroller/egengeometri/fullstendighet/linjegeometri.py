@@ -1,9 +1,9 @@
 #Egengeometri.Fullstendighet.Linjegeometri
 
-def egengeometri_fullstendighet_linjegeometri_kvalitet(self):
-    geo_linje_id = next((i['id']for i in self.egenskapstyper if i['navn'] == "Geometri, linje"), 0)
+def egengeometri_fullstendighet_linjegeometri_kvalitet(df, egenskapstyper):
+    geo_linje_id = next((i.get('id')for i in egenskapstyper if i.get('navn') == "Geometri, linje"), 0)
     if geo_linje_id == 0:
-        return False
+        return False #Ikke helt riktig ettersom det er mulig at ingen objekter har linjegeometri men skal ha det
     
-    self.df['har_linjegeometri'] = self.df['egenskaper'].apply(lambda x: 1 if geo_linje_id in [i.get('id') for i in x] else 0)
-    return self.df[self.df['har_linjegeometri'] == 1].shape[0]
+    df['har_linjegeometri'] = df['egenskaper'].apply(lambda x: 1 if geo_linje_id in [i.get('id') for i in x] else 0)
+    return df[df['har_linjegeometri'] == 1].shape[0]

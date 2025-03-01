@@ -36,14 +36,14 @@ def add_kvalitetsmålinger():
     from flaskr.automatisk_registrering import Automatisk_registrer_kvalitet
     db = get_db()
     vegobjekttyper = db.execute(
-        "SELECT id as vt_id FROM vegobjekttype LIMIT 3"
+        "SELECT id as vt_id FROM vegobjekttype"
         ).fetchall()
     
     vegobjekttyper = [dict(row) for row in vegobjekttyper]
     for vegobjekttype in vegobjekttyper:
-        if vegobjekttype['vt_id'] == 3:
+        if vegobjekttype['vt_id'] == 470:
             kvalitet = Automatisk_registrer_kvalitet(vegobjekttype['vt_id'])
-            kvalitet.hent_kvalitetsmåling()
+            #kvalitet.hent_kvalitetsmåling()
 
     """ områder = db.execute(
         "SELECT * FROM område WHERE fylke_id IS NOT NULL AND vegsystem_id > 2"
