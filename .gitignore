@@ -5,3 +5,4 @@ flaskr/kommuner.xlsx
 flaskr/alle_vegstrekninger.xlsx
 flaskr/vegnett.csv
 instance/
+*.pyc
