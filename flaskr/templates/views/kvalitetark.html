@@ -13,17 +13,24 @@
           <option value="{{ vegobjekttype[0] }}">{{ vegobjekttype[1] }}</option>
         {% endfor %}
       </select>
-      
-      <label for="områder">Velg område:</label>
-      <select name="områder" id="områder">
-        {% for område in områder %}
-          <option value="{{ område['id'] }}" {% if omrade_id is defined and område['id'] | string() == omrade_id | string() %}selected{% endif %}>{{ område['navn'] }}</option>
-        {% endfor %}
-      </select>
-      
-      <button type="submit" name="action" value="vt_område_filter">Velg</button>
+      {% if not vtid %}
+      <button type="submit" name="vtid" value="vt_filter">Velg</button>
+      {% endif %}
     </form>
   </div>
+  {% if vtid %}
+  <div>       
+    <form method="post">
+      <label for="områder">Velg område:</label>
+      <select name="områder" id="områder">
+      {% for område in områder %}
+        <option value="{{ område['id'] }}" {% if omrade_id is defined and område['id'] | string() == omrade_id | string() %}selected{% endif %}>{{ område['navn'] }}</option>
+      {% endfor %}
+      </select>  
+      <button type="submit" name="område" value="vt_område_filter">Velg</button>
+    </form>
+  </div>
+  {% endif %}
   {% if omrade_id %}
   <div style="display: flex; justify-content: space-between; align-items: flex-end;">
     <div>

@@ -43,24 +43,6 @@ def add_kvalitetsmålinger():
     for vegobjekttype in vegobjekttyper:
         if vegobjekttype['vt_id'] == 470:
             kvalitet = Automatisk_registrer_kvalitet(vegobjekttype['vt_id'])
-            #kvalitet.hent_kvalitetsmåling()
-
-    """ områder = db.execute(
-        "SELECT * FROM område WHERE fylke_id IS NOT NULL AND vegsystem_id > 2"
-        ).fetchall()
-
-    for område in områder:
-        print(område["navn"])
-        for vegobjekttype in vegobjekttyper:
-            sjekk = db.execute(
-                "SELECT * FROM kvalitetsmåling WHERE kvalitetselement_id = ? AND område_id = ? AND vegobjekttype_id = ? AND egenskapstype_id = ?",
-                (7, område["id"], vegobjekttype["vt_id"], 0)#vegobjekttype["et_id"]
-                ).fetchone()
-            if not sjekk:
-                kvalitet = Automatisk_registrer_kvalitet(7, område["id"], vegobjekttype["vt_id"], 0)
-                kvalitet.hent_kvalitet()
-                kvalitet.hent_referanseverdi()
-                kvalitet.registrer_kvalitet() """
     
     db.commit()
     return redirect(url_for('views.index'))
@@ -92,288 +74,31 @@ def add_kvalitetregistrering():
         db.commit()
         return redirect(url_for('views.add_kvalitetregistrering'))
     return render_template('views/kvalitetregistrering.html')
-
-@bp.route('/datakvalitet/tabell', methods=('GET', 'POST'))
-def datakvalitet():
-    if request.method == 'GET':
-        db = get_db()
-        kvalitetsmålinger = db.execute(
-            """SELECT kvalitetselement.navn AS ke_navn, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn AS vt_navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn AS et_navn, område.navn AS område, kvalitetsmåling.verdi, kvalitetsmåling.dato 
-            FROM kvalitetsmåling
-            INNER JOIN kvalitetselement ON kvalitetsmåling.kvalitetsnivå_1 = kvalitetselement.kvalitetsnivå_1
-            AND kvalitetsmåling.kvalitetsnivå_2 = kvalitetselement.kvalitetsnivå_2
-            AND kvalitetsmåling.kvalitetsnivå_3 = kvalitetselement.kvalitetsnivå_3
-            INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
-            INNER JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
-            INNER JOIN område ON kvalitetsmåling.område_id = område.id"""
-            ).fetchall()
-        print([r for r in kvalitetsmålinger[0]])
-        return render_template('views/datakvalitet.html', kvalitetsmålinger=kvalitetsmålinger)
-
-@bp.route('/datakvalitet/vegobjekttype', methods=('GET', 'POST'))
-@bp.route('/datakvalitet/vegobjekttype/<string:id>', methods=('GET', 'POST'))
-def datakvalitet_vegobjekttype(id = None):
-    if request.method == 'GET':
-        db = get_db()
-        if id is not None:
-            kvalitetsmålinger = db.execute(
-                """SELECT kvalitetselement.navn AS ke_navn, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn AS vt_navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn AS et_navn, område.navn AS område, kvalitetsmåling.verdi, kvalitetsmåling.dato 
-                FROM kvalitetsmåling
-                INNER JOIN kvalitetselement ON kvalitetsmåling.kvalitetsnivå_1 = kvalitetselement.kvalitetsnivå_1
-                AND kvalitetsmåling.kvalitetsnivå_2 = kvalitetselement.kvalitetsnivå_2
-                AND kvalitetsmåling.kvalitetsnivå_3 = kvalitetselement.kvalitetsnivå_3
-                INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
-                LEFT JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
-                INNER JOIN område ON kvalitetsmåling.område_id = område.id
-                WHERE kvalitetsmåling.vegobjekttype_id = ? AND kvalitetsmåling.egenskapstype_id IS NULL
-                ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id""",
-                (id,)   
-                ).fetchall()
-            kvalitetsmålinger = [{'kv':r['ke_navn'], 'vt':r['vt_navn'], 'et':r['et_navn'], 'område':r['område'], 'v':r['verdi']} for r in kvalitetsmålinger]
-            referanseverdier = db.execute(
-                """SELECT kvalitetselement.navn AS ke_navn, referanseverdi.vegobjekttype_id, vegobjekttype.navn AS vt_navn, referanseverdi.egenskapstype_id, egenskapstype.navn AS et_navn, område.navn AS område, referanseverdi.verdi, referanseverdi.dato 
-                FROM referanseverdi
-                INNER JOIN kvalitetselement ON referanseverdi.kvalitetsnivå_1 = kvalitetselement.kvalitetsnivå_1
-                AND referanseverdi.kvalitetsnivå_2 = kvalitetselement.kvalitetsnivå_2
-                AND referanseverdi.kvalitetsnivå_3 = kvalitetselement.kvalitetsnivå_3
-                INNER JOIN vegobjekttype ON referanseverdi.vegobjekttype_id = vegobjekttype.id
-                LEFT JOIN egenskapstype ON referanseverdi.egenskapstype_id = egenskapstype.id
-                INNER JOIN område ON referanseverdi.område_id = område.id
-                WHERE referanseverdi.vegobjekttype_id = ? AND referanseverdi.egenskapstype_id IS NULL
-                ORDER BY referanseverdi.vegobjekttype_id, referanseverdi.egenskapstype_id""",
-                (id,)
-                ).fetchall()
-            referanseverdier = [{'kv':r['ke_navn'], 'vt':r['vt_navn'], 'et':r['et_navn'], 'område':r['område'], 'v':r['verdi']} for r in referanseverdier]
-            kolonne1 = db.execute(
-                """SELECT kvalitetselement.navn
-                FROM kvalitetselement"""
-            ).fetchall()
-            kolonne2 = db.execute(
-                """SELECT område.navn, område.fylke_id, vegsystem.vegkategori_id, vegsystem.vegnummer
-                FROM område 
-                LEFT JOIN vegsystem ON område.vegsystem_id = vegsystem.id"""
-            ).fetchall()
-            kolonne2 = [dict(row) for row in kolonne2]
-
-            l = []
-            r = []
-            for kol1 in kolonne1:
-                g = []
-                s = []
-                for kol2 in kolonne2:
-                    g.append(next((r['v'] for r in kvalitetsmålinger if r['kv'] == kol1['navn'] and r['område'] == kol2['navn']),None))
-                    s.append(next((r['v'] for r in referanseverdier if r['kv'] == kol1['navn'] and r['område'] == kol2['navn']),None))
-                l.append(g)
-                r.append(s)
-            return render_template('views/datakvalitet_vegobjekttype.html', kvalitetsmålinger=l, referanseverdier=r, id=id, kolonne1=kolonne1, kolonne2=kolonne2)
-        kvalitetsmålinger = db.execute(
-            """SELECT vegobjekttype.id, vegobjekttype.navn
-            FROM vegobjekttype"""
-        ).fetchall()
-        l = [(r['id'], str(r['id']) + ' - ' + r['navn']) for r in kvalitetsmålinger]
-        return render_template('views/datakvalitet_vegobjekttype.html', kvalitetsmålinger=l, id=id)
-    if request.method == 'POST':
-        print(request.form)
-        id = request.form['vegobjekttype']
-        return redirect(url_for('views.datakvalitet_vegobjekttype', id=id))
-
-@bp.route('/datakvalitet/område', methods=('GET', 'POST'))
-@bp.route('/datakvalitet/område/<string:id>', methods=('GET', 'POST'))
-def datakvalitet_område(id = None):
-    if request.method == 'GET':
-        db = get_db()
-        if id is not None:
-            kvalitetsmålinger = db.execute(
-                """SELECT kvalitetselement.navn AS ke_navn, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn AS vt_navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn AS et_navn, område.navn AS område, kvalitetsmåling.verdi, kvalitetsmåling.dato 
-                FROM kvalitetsmåling
-                INNER JOIN kvalitetselement ON kvalitetsmåling.kvalitetsnivå_1 = kvalitetselement.kvalitetsnivå_1
-                AND kvalitetsmåling.kvalitetsnivå_2 = kvalitetselement.kvalitetsnivå_2
-                AND kvalitetsmåling.kvalitetsnivå_3 = kvalitetselement.kvalitetsnivå_3
-                INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
-                LEFT JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
-                INNER JOIN område ON kvalitetsmåling.område_id = område.id
-                WHERE område.id = ?
-                ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id""",
-                (id,)
-                ).fetchall()
-            kvalitetsmålinger = [{'kv':r['ke_navn'], 'vt':r['vt_navn'], 'et':r['et_navn'], 'område':r['område'], 'v':r['verdi']} for r in kvalitetsmålinger]
-            referanseverdier = db.execute(
-                """SELECT kvalitetselement.navn AS ke_navn, referanseverdi.vegobjekttype_id, vegobjekttype.navn AS vt_navn, referanseverdi.egenskapstype_id, egenskapstype.navn AS et_navn, område.navn AS område, referanseverdi.verdi, referanseverdi.dato 
-                FROM referanseverdi
-                INNER JOIN kvalitetselement ON referanseverdi.kvalitetsnivå_1 = kvalitetselement.kvalitetsnivå_1
-                AND referanseverdi.kvalitetsnivå_2 = kvalitetselement.kvalitetsnivå_2
-                AND referanseverdi.kvalitetsnivå_3 = kvalitetselement.kvalitetsnivå_3
-                INNER JOIN vegobjekttype ON referanseverdi.vegobjekttype_id = vegobjekttype.id
-                LEFT JOIN egenskapstype ON referanseverdi.egenskapstype_id = egenskapstype.id
-                INNER JOIN område ON referanseverdi.område_id = område.id
-                WHERE område.id = ?
-                ORDER BY referanseverdi.vegobjekttype_id, referanseverdi.egenskapstype_id""",
-                (id,)
-                ).fetchall()
-            referanseverdier = [{'kv':r['ke_navn'], 'vt':r['vt_navn'], 'et':r['et_navn'], 'område':r['område'], 'v':r['verdi']} for r in referanseverdier]
-            kolonne1 = db.execute(
-                """select vegobjekttype.navn, vegobjekttype.id, null as et_navn, null as et_id
-                from vegobjekttype
-                union all
-                select vegobjekttype.navn, vegobjekttype.id, egenskapstype.navn as et_navn, egenskapstype.id as et_id
-                from vegobjekttype
-                left join egenskapstype on vegobjekttype.id = egenskapstype.vegobjekttype_id
-                ORDER BY vegobjekttype.id, et_id"""
-            ).fetchall()
-            kolonne2 = db.execute(
-                """SELECT kvalitetselement.navn
-                FROM kvalitetselement"""
-            ).fetchall()
-            kolonne1 = [dict(row) for row in kolonne1]
-            kolonne2 = [dict(row) for row in kolonne2]
-
-            l = []
-            r = []
-            for kol1 in kolonne1:
-                #print(kol1['et_navn'], type(kol1['et_navn']))
-                g = []
-                s = []
-                for kol2 in kolonne2:
-                    g.append(next((r['v'] for r in kvalitetsmålinger if r['vt'] == kol1['navn'] and r['kv'] == kol2['navn'] and (r['et'] == kol1['et_navn'] or (r['et'] is None and kol1['et_navn'] is None))), None))
-                    s.append(next((r['v'] for r in referanseverdier if r['vt'] == kol1['navn'] and r['kv'] == kol2['navn'] and (r['et'] == kol1['et_navn'] or (r['et'] is None and kol1['et_navn'] is None))),None))
-                l.append(g)
-                r.append(s)
-            #print(l)
-            return render_template('views/datakvalitet_område.html', kvalitetsmålinger=l, referanseverdier=r, id=id, kolonne1=kolonne1, kolonne2=kolonne2)
-        kvalitetsmålinger = db.execute(
-            """SELECT område.id, område.navn
-            FROM område"""
-        ).fetchall()
-        l = [(r['id'], r['navn']) for r in kvalitetsmålinger]
-        return render_template('views/datakvalitet_område.html', kvalitetsmålinger=l, id=id)
-    if request.method == 'POST':
-        id = request.form['område']
-        return redirect(url_for('views.datakvalitet_område', id=id))
-
-@bp.route('/datakvalitet/kvalitetelement', methods=('GET', 'POST'))
-@bp.route('/datakvalitet/kvalitetelement/<string:id>', methods=('GET', 'POST'))
-def datakvalitet_kvalitetelement(id = None):
-    if request.method == 'GET':
-        db = get_db()
-        if id is not None:
-            kv1, kv2, kv3 = id[0], id[1], id[2]
-            kvalitetsmålinger = db.execute(
-                """SELECT kvalitetselement.navn AS ke_navn, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn AS vt_navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn AS et_navn, område.navn AS område, kvalitetsmåling.verdi, kvalitetsmåling.dato 
-                FROM kvalitetsmåling
-                INNER JOIN kvalitetselement ON kvalitetsmåling.kvalitetsnivå_1 = kvalitetselement.kvalitetsnivå_1
-                AND kvalitetsmåling.kvalitetsnivå_2 = kvalitetselement.kvalitetsnivå_2
-                AND kvalitetsmåling.kvalitetsnivå_3 = kvalitetselement.kvalitetsnivå_3
-                INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
-                INNER JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
-                INNER JOIN område ON kvalitetsmåling.område_id = område.id
-                WHERE kvalitetselement.kvalitetsnivå_1 = ? AND kvalitetselement.kvalitetsnivå_2 = ? AND kvalitetselement.kvalitetsnivå_3 = ?""",
-                (kv1, kv2, kv3)
-                ).fetchall()
-            kvalitetsmålinger = [{'kv':r['ke_navn'], 'vt':r['vt_navn'], 'et':r['et_navn'], 'område':r['område'], 'v':r['verdi']} for r in kvalitetsmålinger]
-            print(kvalitetsmålinger)
-            kolonne1 = db.execute(
-                """select vegobjekttype.navn, vegobjekttype.id, null as et_navn, null as et_id
-                from vegobjekttype
-                union all
-                select vegobjekttype.navn, vegobjekttype.id, egenskapstype.navn as et_navn, egenskapstype.id as et_id
-                from vegobjekttype
-                left join egenskapstype on vegobjekttype.id = egenskapstype.vegobjekttype_id
-                ORDER BY vegobjekttype.id, et_id"""
-            ).fetchall()
-            kolonne2 = db.execute(
-                """SELECT område.navn, område.fylke_id, vegsystem.vegkategori_id, vegsystem.vegnummer
-                FROM område 
-                LEFT JOIN vegsystem ON område.vegsystem_id = vegsystem.id"""
-            ).fetchall()
-            kolonne1 = [dict(row) for row in kolonne1]
-            kolonne2 = [dict(row) for row in kolonne2]
-
-            l = []
-            for kol1 in kolonne1:
-                g = []
-                for kol2 in kolonne2:
-                    g.append(next((r['v'] for r in kvalitetsmålinger if r['vt'] == kol1['navn'] and r['område'] == kol2['navn'] and r['et'] == kol1['et_navn']),None))
-                l.append(g)
-            return render_template('views/datakvalitet_kvalitetelement.html', kvalitetsmålinger=l, id=id, kolonne1=kolonne1, kolonne2=kolonne2)
-        kvalitetsmålinger = db.execute(
-            """SELECT kvalitetselement.kvalitetsnivå_1, kvalitetselement.kvalitetsnivå_2, kvalitetselement.kvalitetsnivå_3, kvalitetselement.navn
-            FROM kvalitetselement"""
-        ).fetchall()
-        l = [(str(r['kvalitetsnivå_1']) + str(r['kvalitetsnivå_2']) + str(r['kvalitetsnivå_3']), r['navn']) for r in kvalitetsmålinger]
-        return render_template('views/datakvalitet_kvalitetelement.html', kvalitetsmålinger=l, id=id)
-    if request.method == 'POST':
-        id = request.form['kvalitetelement']
-        return redirect(url_for('views.datakvalitet_kvalitetelement', id=id))
-    
-@bp.route('/datakvalitet', methods=('GET', 'POST'))
-@bp.route('/datakvalitet/<string:vtid>_<string:kvid>', methods=('GET', 'POST'))
-def datakvalitet_kvalitetsark(vtid = None, kvid = None):
-    if request.method == 'GET':
-        print("dd")
-        db = get_db()
-        vegobjekttyper = db.execute(
-            """SELECT * FROM vegobjekttype"""
-        ).fetchall()
-        kvalitetselementer = db.execute(
-            """SELECT * FROM kvalitetselement"""
-        )
-        vegobjekttyper = [dict(row) for row in vegobjekttyper]
-        vegobjekttyper_ = [(r['id'], str(r['id']) + ' - ' + r['navn']) for r in vegobjekttyper]
-        kvalitetselementer = [dict(row) for row in kvalitetselementer]
-        if vtid is not None and kvid is not None:
-            print(vtid, kvid)
-            egenskapstyper = db.execute(
-                """SELECT * FROM egenskapstype"""
-            ).fetchall()
-            egenskapstyper = [dict(row) for row in egenskapstyper]
-            områder = db.execute(
-                """SELECT * FROM område"""
-            )
-            områder = [dict(row) for row in områder]
-            vegobjektnavn = next((i.get('navn') for i in vegobjekttyper if i.get('id') == vtid),'Noe galt har skjedd')
-            kvalitetselementnavn = next((i.get('navn') for i in kvalitetselementer if i.get('navn') == kvid), 'Noe galt har skjedd')
-            kvalitetsmålinger = db.execute(
-                """SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, kvalitetsmåling.område_id, kvalitetsmåling.verdi, kvalitetsmåling.dato 
-                FROM kvalitetsmåling
-                INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
-                LEFT JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
-                WHERE kvalitetsmåling.vegobjekttype_id = ? AND kvalitetsmåling.kvalitetselement_id = ?
-                ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id""",
-                (vtid, kvid)
-                ).fetchall()
-            kvalitetsmålinger = [dict(row) for row in kvalitetsmålinger]
-            referanseverdier = db.execute(
-                """SELECT referanseverdi.kvalitetselement_id AS kvid, referanseverdi.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, referanseverdi.område_id, referanseverdi.verdi, referanseverdi.dato 
-                FROM referanseverdi
-                INNER JOIN vegobjekttype ON referanseverdi.vegobjekttype_id = vegobjekttype.id
-                WHERE referanseverdi.vegobjekttype_id = ? AND referanseverdi.kvalitetselement_id = ?
-                ORDER BY referanseverdi.vegobjekttype_id""",
-                (vtid, kvid)
-                ).fetchall()
-            referanseverdier = [dict(row) for row in referanseverdier]
-            return render_template('views/kvalitetark.html', vegobjekttyper_=vegobjekttyper_, kvalitetselementer=kvalitetselementer, vegobjekttyper=vegobjekttyper, egenskapstyper=egenskapstyper, vtid=vtid, kvid=kvid, vegobjektnavn=vegobjektnavn, kvalitetselementnavn=kvalitetselementnavn, kvalitetsmålinger=kvalitetsmålinger, referanseverdier=referanseverdier, områder=områder)
-        return render_template('views/kvalitetark.html', vegobjekttyper_=vegobjekttyper_, kvalitetselementer=kvalitetselementer)
-
-    if request.method == 'POST':
-        print("dank")
-        vtid = request.form['vegobjekttyper']
-        kvid = request.form['kvalitetselementer']
-        return redirect(url_for('views.datakvalitet_kvalitetsark', vtid=vtid, kvid=kvid))
     
 @bp.route('/kvalitetark', methods=('GET', 'POST'))
-@bp.route('/kvalitetark/vegobjekttype=<string:vtid>&område=<string:omrade_id>', methods=('GET', 'POST'))
+@bp.route('/kvalitetark/vegobjekttype/<string:vtid>', methods=('GET', 'POST'))
+@bp.route('/kvalitetark/vegobjekttype/<string:vtid>/område/<string:omrade_id>', methods=('GET', 'POST'))
 def datakvalitet_kvalitetark(vtid = None, omrade_id = None):
     if request.method == 'GET':
         db = get_db()
         vegobjekttyper = db.execute(
             """SELECT * FROM vegobjekttype"""
         ).fetchall()
-        områder = db.execute(
-            """SELECT * FROM område"""
-        )
         vegobjekttyper = [dict(row) for row in vegobjekttyper]
         vegobjekttyper_ = [(r['id'], str(r['id']) + ' - ' + r['navn']) for r in vegobjekttyper]
-        områder = [dict(row) for row in områder]
+
+        if vtid is not None:
+            vegstrekninger = db.execute(
+                """SELECT vegsystem_id, vegstrekning, fylke_id, kommune_id, navn, vegstrekning.id 
+                FROM vegstrekning
+                join kvalitetsmåling on vegstrekning.id = kvalitetsmåling.vegstrekning_id
+                join vegsystem on vegstrekning.vegsystem_id = vegsystem.id
+                where kvalitetsmåling.vegobjekttype_id = ?
+                order by vegkategori_id, vegnummer, vegstrekning""",
+                (vtid,)
+            ).fetchall()
+            vegstrekninger = [dict(row) for row in vegstrekninger]
+        
         if vtid is not None and omrade_id is not None:
             egenskapstyper = db.execute(
                 """SELECT * FROM egenskapstype"""
@@ -387,23 +112,23 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None):
             ).fetchall()
             kvalitetselement = [dict(row) for row in kvalitetselement]
             vegobjektnavn = next((i.get('navn') for i in vegobjekttyper if i.get('id') == vtid),'Noe galt har skjedd')
-            områdenavn = next((i.get('navn') for i in områder if i.get('id') == omrade_id), 'Noe galt har skjedd')
+            områdenavn = next((i.get('navn') for i in vegstrekninger if i.get('id') == omrade_id), 'Noe galt har skjedd')
             kvalitetsmålinger = db.execute(
-                """SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, kvalitetsmåling.område_id, kvalitetsmåling.verdi, kvalitetsmåling.dato 
+                """SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, kvalitetsmåling.vegstrekning_id, kvalitetsmåling.verdi, kvalitetsmåling.dato 
                 FROM kvalitetsmåling
                 INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
                 LEFT JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
-                WHERE kvalitetsmåling.vegobjekttype_id = ? AND kvalitetsmåling.område_id = ?
+                WHERE kvalitetsmåling.vegobjekttype_id = ? AND kvalitetsmåling.vegstrekning_id = ?
                 ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id""",
                 (vtid, omrade_id)
                 ).fetchall()
             kvalitetsmålinger = [dict(row) for row in kvalitetsmålinger]
             kvalitetselement_relevant_ider = list(set([str(item['kvid']) for item in kvalitetsmålinger]))
             referanseverdier = db.execute(
-                """SELECT referanseverdi.kvalitetselement_id AS kvid, referanseverdi.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, referanseverdi.område_id, referanseverdi.verdi, referanseverdi.dato 
+                """SELECT referanseverdi.kvalitetselement_id AS kvid, referanseverdi.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, referanseverdi.vegstrekning_id, referanseverdi.verdi, referanseverdi.dato 
                 FROM referanseverdi
                 INNER JOIN vegobjekttype ON referanseverdi.vegobjekttype_id = vegobjekttype.id
-                WHERE referanseverdi.vegobjekttype_id = ? AND referanseverdi.område_id = ?
+                WHERE referanseverdi.vegobjekttype_id = ? AND referanseverdi.vegstrekning_id = ?
                 ORDER BY referanseverdi.vegobjekttype_id""",
                 (vtid, omrade_id)
                 ).fetchall()
@@ -412,17 +137,18 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None):
                 """SELECT * FROM skala"""
             ).fetchall()
             skala = [dict(row) for row in skala]
-            return render_template('views/kvalitetark.html', vtid=vtid, omrade_id=omrade_id, vegobjekttyper_=vegobjekttyper_, vegobjekttyper=vegobjekttyper, egenskapstyper=egenskapstyper, områder=områder, kvalitetselementer=kvalitetselement, kvalitetselement_relevant_ider=kvalitetselement_relevant_ider, kvalitetsmålinger=kvalitetsmålinger, referanseverdier=referanseverdier, skala=skala)
+            return render_template('views/kvalitetark.html', vtid=vtid, omrade_id=omrade_id, vegobjekttyper_=vegobjekttyper_, vegobjekttyper=vegobjekttyper, egenskapstyper=egenskapstyper, områder=vegstrekninger, kvalitetselementer=kvalitetselement, kvalitetselement_relevant_ider=kvalitetselement_relevant_ider, kvalitetsmålinger=kvalitetsmålinger, referanseverdier=referanseverdier, skala=skala)
 
-        return render_template('views/kvalitetark.html', vegobjekttyper_=vegobjekttyper_, områder=områder)
+        if vtid is not None:
+            return render_template('views/kvalitetark.html', vegobjekttyper_=vegobjekttyper_, områder=vegstrekninger, vtid=vtid)
+        return render_template('views/kvalitetark.html', vegobjekttyper_=vegobjekttyper_)
 
     if request.method == 'POST':
-        action = request.form['action']
-        """ if action == "område2_filter":
-            omrade_id2 = request.form['områder2']
-            return redirect(url_for('views.datakvalitet_kvalitetark', vtid=vtid, omrade_id=omrade_id, omrade_id2=omrade_id2)) """
-        print("dank")
-        vtid = request.form['vegobjekttyper']
+        vtid_filter = request.form.get('vtid')
+        område_filter = request.form.get('område')
+        if vtid_filter is not None and område_filter is None:
+            vtid = request.form['vegobjekttyper']
+            return redirect(url_for('views.datakvalitet_kvalitetark', vtid=vtid))
         omrade_id = request.form['områder']
         return redirect(url_for('views.datakvalitet_kvalitetark', vtid=vtid, omrade_id=omrade_id))
     
