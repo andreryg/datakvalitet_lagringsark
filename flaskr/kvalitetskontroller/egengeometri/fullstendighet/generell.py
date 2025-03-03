@@ -1,11 +1,9 @@
 #Egengeometri.Fullstendighet.Generell
 
 def egengeometri_fullstendighet_generell_kvalitet(df, egenskapstyper):
-    geo_linje_id = next((i.get('id')for i in egenskapstyper if i.get('navn') == "Geometri, linje"), 0)
-    if geo_linje_id == 0:
+    geo_linje_ids = [i.get('id') for i in egenskapstyper if "Geometri" in i.get('navn')]
+    if not geo_linje_ids:
         return False
-    kvalitet = {}
-    for egenskapstype in egenskapstyper:
-        df['har_egenskapstype'] = df['egenskaper'].apply(lambda x: 1 if egenskapstype.get('id') in [i.get('id') for i in x] else 0)
-        kvalitet[egenskapstype.get('id')] = df[df['har_egenskapstype'] == 1].shape[0]
-    return kvalitet
+    
+    df['har_geometri'] = df['egenskaper'].apply(lambda x: 1 if any(geo_id in [i.get('id') for i in x] for geo_id in geo_linje_ids) else 0)
+    return df[df['har_geometri'] == 1].shape[0]

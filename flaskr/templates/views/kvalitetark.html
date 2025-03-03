@@ -10,7 +10,7 @@
       <label for="vegobjekttyper">Velg vegobjekttype:</label>
       <select name="vegobjekttyper" id="vegobjekttyper">
         {% for vegobjekttype in vegobjekttyper_ %}
-          <option value="{{ vegobjekttype[0] }}">{{ vegobjekttype[1] }}</option>
+          <option value="{{ vegobjekttype[0] }}" {% if vtid is defined and vegobjekttype['id'] | string() == vtid | string() %}selected{% endif %}>{{ vegobjekttype[1] }}</option>
         {% endfor %}
       </select>
       <button type="submit" name="vtid" value="vt_filter">Velg</button>
@@ -83,7 +83,7 @@
     //if (kvid == 2) {
     //  filteredEgenskapstyper = filteredEgenskapstyper.filter(dict => dict.viktighet === "PÅKREVD_IKKE_ABSOLUTT" || dict.viktighet === "PÅKREVD_ABSOLUTT")
     //} 
-    const chartHeights = {'13': '1000px', '14':'500px','15':'500px', '28':'1000px','30':'300px','58':'300px','59':'300px','62':'300px','5':'500px','6':'500px','7':'300px'}
+    const chartHeights = {'13': '1000px', '14':'500px','15':'500px', '28':'300px','30':'300px','58':'300px','59':'300px','62':'300px','5':'500px','6':'500px','7':'300px'}
 
     document.getElementById('område_kvalitetselement').addEventListener('click', function() {
       for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
@@ -168,7 +168,7 @@
         filteredEgenskapstyper = filteredEgenskapstyper.filter(dict => dict.viktighet === "PÅKREVD_IKKE_ABSOLUTT" || dict.viktighet === "PÅKREVD_ABSOLUTT")
       } else if (kvalitetselement_id == 15){
         filteredEgenskapstyper = filteredEgenskapstyper.filter(dict => dict.viktighet === "BETINGET")
-      } else if (['30','58','59','62'].includes(kvalitetselement_id)){
+      } else if (['28','30','58','59','62'].includes(kvalitetselement_id)){
         filteredEgenskapstyper = [];
       }
       var labels = filteredVegobjekttyper.concat(filteredEgenskapstyper);
