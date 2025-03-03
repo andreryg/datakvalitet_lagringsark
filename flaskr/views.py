@@ -89,7 +89,7 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None):
 
         if vtid is not None:
             vegstrekninger = db.execute(
-                """SELECT vegsystem_id, vegstrekning, fylke_id, kommune_id, navn, vegstrekning.id 
+                """SELECT DISTINCT vegsystem_id, vegstrekning, fylke_id, kommune_id, navn, vegstrekning.id 
                 FROM vegstrekning
                 join kvalitetsmåling on vegstrekning.id = kvalitetsmåling.vegstrekning_id
                 join vegsystem on vegstrekning.vegsystem_id = vegsystem.id

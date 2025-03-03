@@ -76,7 +76,6 @@
     const kvalitetsmålinger = {{ kvalitetsmålinger | tojson }};
     console.log(kvalitetsmålinger)
     const referanseverdier = {{ referanseverdier | tojson }};
-    console.log(referanseverdier)
     const skala = {{ skala | tojson }};
     const defaultSkala = skala.filter(dict => dict.id === 1);
     const filteredVegobjekttyper = vegobjekttyper.filter(dict => dict.id === vtid);
@@ -84,7 +83,7 @@
     //if (kvid == 2) {
     //  filteredEgenskapstyper = filteredEgenskapstyper.filter(dict => dict.viktighet === "PÅKREVD_IKKE_ABSOLUTT" || dict.viktighet === "PÅKREVD_ABSOLUTT")
     //} 
-    const chartHeights = {'13': '1000px', '14':'500px','15':'500px','30':'300px','58':'300px','59':'300px','62':'300px','5':'500px','6':'500px','7':'300px'}
+    const chartHeights = {'13': '1000px', '14':'500px','15':'500px', '28':'1000px','30':'300px','58':'300px','59':'300px','62':'300px','5':'500px','6':'500px','7':'300px'}
 
     document.getElementById('område_kvalitetselement').addEventListener('click', function() {
       for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
@@ -154,6 +153,11 @@
 
     function prepareData(kvalitetsmålinger, referanseverdier, kvalitetselement_id, område_id){
       var filteredKvalitetsmålinger = kvalitetsmålinger.filter(dict => dict.kvid == kvalitetselement_id);
+      if (filteredKvalitetsmålinger.length > 1){
+        var sum = filteredKvalitetsmålinger.reduce((acc, curr) => acc + curr.verdi, 0);
+        var avg = sum / filteredKvalitetsmålinger.length;
+        filteredKvalitetsmålinger.unshift({ verdi: avg });
+      }
       var filteredReferanseverdier = referanseverdier.filter(dict => dict.kvid == kvalitetselement_id);
       var referanseverdi = filteredReferanseverdier[0]['verdi']
       var verdier = filteredKvalitetsmålinger.map(dict => (dict['verdi'] / referanseverdi * 100).toFixed(2));
@@ -173,6 +177,7 @@
     }
     
     function drawGraph(chart_id, dataset1, dataset2, labels, område1, område2, kravverdi, kvalitetselement_navn, skala){
+      console.log(dataset1)
       var ctx = document.getElementById(chart_id).getContext("2d");
       document.getElementById(chart_id).parentElement.style.marginBottom = "50px";
 
