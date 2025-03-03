@@ -94,7 +94,7 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None):
                 join kvalitetsmåling on vegstrekning.id = kvalitetsmåling.vegstrekning_id
                 join vegsystem on vegstrekning.vegsystem_id = vegsystem.id
                 where kvalitetsmåling.vegobjekttype_id = ?
-                order by vegkategori_id, vegnummer, vegstrekning""",
+                order by vegkategori_id, vegnummer, CAST(SUBSTR(vegstrekning, 2) AS INTEGER)""",
                 (vtid,)
             ).fetchall()
             vegstrekninger = [dict(row) for row in vegstrekninger]
@@ -159,20 +159,20 @@ def add_område():
     område_id = jason[1]
     db = get_db()
     sammenlign_kvalitetsmålinger = db.execute(
-        """SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, kvalitetsmåling.område_id, kvalitetsmåling.verdi, kvalitetsmåling.dato 
+        """SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, kvalitetsmåling.vegstrekning_id, kvalitetsmåling.verdi, kvalitetsmåling.dato 
         FROM kvalitetsmåling
         INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
         LEFT JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
-        WHERE kvalitetsmåling.vegobjekttype_id = ? AND kvalitetsmåling.område_id = ?
+        WHERE kvalitetsmåling.vegobjekttype_id = ? AND kvalitetsmåling.vegstrekning_id = ?
         ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id""",
         (vtid, område_id)
         ).fetchall()
     sammenlign_kvalitetsmålinger = [dict(row) for row in sammenlign_kvalitetsmålinger]
     sammenlign_referanseverdier = db.execute(
-        """SELECT referanseverdi.kvalitetselement_id AS kvid, referanseverdi.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, referanseverdi.område_id, referanseverdi.verdi, referanseverdi.dato 
+        """SELECT referanseverdi.kvalitetselement_id AS kvid, referanseverdi.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, referanseverdi.vegstrekning_id, referanseverdi.verdi, referanseverdi.dato 
         FROM referanseverdi
         INNER JOIN vegobjekttype ON referanseverdi.vegobjekttype_id = vegobjekttype.id
-        WHERE referanseverdi.vegobjekttype_id = ? AND referanseverdi.område_id = ?
+        WHERE referanseverdi.vegobjekttype_id = ? AND referanseverdi.vegstrekning_id = ?
         ORDER BY referanseverdi.vegobjekttype_id""",
         (vtid, område_id)
         ).fetchall()

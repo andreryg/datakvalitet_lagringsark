@@ -13,9 +13,7 @@
           <option value="{{ vegobjekttype[0] }}">{{ vegobjekttype[1] }}</option>
         {% endfor %}
       </select>
-      {% if not vtid %}
       <button type="submit" name="vtid" value="vt_filter">Velg</button>
-      {% endif %}
     </form>
   </div>
   {% if vtid %}
@@ -76,7 +74,9 @@
     const vtid = {{ vtid }};
     const omrade_id = {{ omrade_id }};
     const kvalitetsmålinger = {{ kvalitetsmålinger | tojson }};
+    console.log(kvalitetsmålinger)
     const referanseverdier = {{ referanseverdier | tojson }};
+    console.log(referanseverdier)
     const skala = {{ skala | tojson }};
     const defaultSkala = skala.filter(dict => dict.id === 1);
     const filteredVegobjekttyper = vegobjekttyper.filter(dict => dict.id === vtid);
