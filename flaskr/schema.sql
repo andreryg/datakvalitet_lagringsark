@@ -84,7 +84,7 @@ CREATE TABLE kommune (
 CREATE TABLE vegstrekning (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     vegsystem_id INTEGER NOT NULL,
-    vegstrekning TEXT NOT NULL,
+    vegstrekning TEXT,
     navn TEXT NOT NULL,
     fylke_id INTEGER,
     kommune_id INTEGER,

@@ -13,14 +13,14 @@ def main():
     df['vegnummer'] = df['VSR.VEGSYSTEMREFERANSE'].apply(lambda x: int(x[2:]))
     df = df.rename(columns={"VSR.VEGSYSTEMREFERANSE": "vegsystem", "LOK.FYLKE-ID": "fylke_id", "LOK.KOMMUNE-ID": "kommune_id"})
     df['kommune_id'] = df.apply(lambda x: x['kommune_id'] if x['vegkategori'] == 'K' else 0, axis=1)
-    df['fylke_id'] = df.apply(lambda x: x['fylke_id'] if x['vegkategori'] in ['K', 'F'] else 0, axis=1)
+    df['fylke_id'] = df.apply(lambda x: x['fylke_id'] if x['vegkategori'] in ['K', 'F', 'E', 'R'] else 0, axis=1)
     print(df.shape)
     df = df.drop_duplicates()
     print(df.shape)
     df = df[df['vegfase'] == "V"]
     print(df.shape)
     print(df.head())
-    df.to_excel("flaskr/alle_verstrekninger.xlsx", index=False)
+    df.to_excel("flaskr/alle_vegstrekninger.xlsx", index=False)
 
 if __name__ == "__main__":
     main()

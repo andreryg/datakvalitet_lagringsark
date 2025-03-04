@@ -49,11 +49,17 @@ def fyll_inn_tabeller():
         df = vegsystem_df.copy()
         df['vegkategori_id'] = df['vegkategori'].apply(lambda x: 1 if x == "E" else 2 if x == "R" else 3 if x == "F" else 4 if x == "K" else 0)
         df = df[['vegkategori_id', 'vegfase', 'vegnummer']]
-        
         db.executemany(
             "INSERT INTO vegsystem (vegkategori_id, fase, vegnummer) VALUES (?, ?, ?)",
             df.values.tolist()
             )
+        """
+        ekstra = [[1, 'V', 0], [2, 'V', 0], [3, 'V', 0], [4, 'V', 0]] #E, R, F, K veg generelt
+        db.executemany(
+            "INSERT INTO vegsystem (vegkategori_id, fase, vegnummer) VALUES (?, ?, ?)",
+            ekstra
+            )
+        """
 
     test_result = db.execute("SELECT * FROM fylke limit 1")
     if not test_result.fetchone():
@@ -119,16 +125,35 @@ def fyll_inn_tabeller():
         print("Fyller inn vegstrekning")
         tqdm.tqdm.pandas()
         vegsystem_df = vegsystem_df.reset_index(drop=True).reset_index()
-        print(vegsystem_df.head(15))
         vegsystem_dict = vegsystem_df.set_index(['vegkategori', 'vegfase', 'vegnummer']).to_dict('index')
         vegstrekninger_df['vegsystem_id'] = vegstrekninger_df.progress_apply(lambda x: vegsystem_dict.get((x['vegkategori'], x['vegfase'], x['vegnummer']), {}).get('index', None)+1, axis=1)
         vegstrekninger_df['navn'] = vegstrekninger_df.progress_apply(lambda x: f"{x['vegsystem']} {x['strekning']}", axis=1)
-        print(vegstrekninger_df.head(15))
+
         db.executemany(
             "INSERT INTO vegstrekning (vegsystem_id, vegstrekning, navn, fylke_id, kommune_id) VALUES (?, ?, ?, ?, ?)",
             vegstrekninger_df[['vegsystem_id', 'strekning', 'navn', 'fylke_id', 'kommune_id']].values.tolist()
             )
-
+        """
+        for vegkat_id in range(1,5):
+            vsys_id = db.execute("SELECT id FROM vegsystem WHERE vegkategori_id = ? AND vegnummer = 0", (vegkat_id,)).fetchone()[0]
+            if vegkat_id == 3: #Fykesveg
+                file = open("flaskr/fylker.txt", "r", encoding="utf-8")
+                fylker = [tuple([None if i == "0" else i for i in line.replace("\n","").split("; ")]) for line in file.readlines()]
+                for fylke in fylker:
+                    db.execute("INSERT INTO vegstrekning (vegsystem_id, navn, fylke_id, kommune_id) VALUES (?, ?, ?, ?)", (vsys_id, 'Fylkesveg '+fylke[1], fylke[0], 0))
+            elif vegkat_id == 4: #Kommunalveg
+                kommune_df = pd.read_excel("flaskr/kommuner.xlsx")
+                for kommune in kommune_df.values.tolist():
+                    db.execute("INSERT INTO vegstrekning (vegsystem_id, navn, fylke_id, kommune_id) VALUES (?, ?, ?, ?)", (vsys_id, 'Kommunalveg '+kommune[1], kommune[2], kommune[0]))
+                file = open("flaskr/fylker.txt", "r", encoding="utf-8")
+                fylker = [tuple([None if i == "0" else i for i in line.replace("\n","").split("; ")]) for line in file.readlines()]
+                for fylke in fylker:
+                    db.execute("INSERT INTO vegstrekning (vegsystem_id, navn, fylke_id, kommune_id) VALUES (?, ?, ?, ?)", (vsys_id, 'Kommunalveg '+fylke[1], fylke[0], 0))
+            elif vegkat_id == 1: #Europaveg
+                db.execute("INSERT INTO vegstrekning (vegsystem_id, navn, fylke_id, kommune_id) VALUES (?, ?, ?, ?)", (vsys_id, 'Europaveg', 0, 0))
+            elif vegkat_id == 2: #Riksveg
+                db.execute("INSERT INTO vegstrekning (vegsystem_id, navn, fylke_id, kommune_id) VALUES (?, ?, ?, ?)", (vsys_id, 'Riksveg', 0, 0))
+        """
     db.commit()
         
 def init_db():

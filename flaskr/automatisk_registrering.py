@@ -36,7 +36,7 @@ class Automatisk_registrer_kvalitet():
 
         for vegstrekning in vegstrekninger:
             self.temp_df = self.df[self.df['vegstrekning'].apply(lambda x: vegstrekning in x)]
-            if vegstrekning[0] == "F":
+            if vegstrekning[0] in ["F", "E", "R"]:
                 fylker = self.temp_df['fylke'].explode().unique().tolist()
                 for fylke_id in fylker:
                     self.temp_temp_df = self.temp_df[self.temp_df['fylke'].apply(lambda x: fylke_id in x)]

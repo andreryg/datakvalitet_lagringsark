@@ -1,6 +1,20 @@
 from flaskr.db import get_db
 import pandas as pd
 
+def aggreger_vegstrekninger(kvalitetsmålinger, referanseverdier, vegstrekninger):
+    vegstrekninger_df = pd.DataFrame(vegstrekninger)
+    """Aggregerer data for vegstrekninger."""
+    kvalitetselementer = list(set([i.get('kv_id') for i in kvalitetsmålinger]))
+    for kv_id in kvalitetselementer:
+        temp_kvalitetsmålinger_df = pd.DataFrame([i for i in kvalitetsmålinger if i.get('kv_id') == kv_id])
+        temp_referanseverdier_df = pd.DataFrame([i for i in referanseverdier if i.get('kv_id') == kv_id])
+
+        #Vegkategori
+        temp_kvalitetsmålinger_df = pd.merge(temp_kvalitetsmålinger_df, vegstrekninger_df, left_on="vegstrekning_id", right_on="id")
+        temp_referanseverdier_df = pd.merge(temp_referanseverdier_df, vegstrekninger_df, left_on="vegstrekning_id", right_on="id")
+        print(temp_kvalitetsmålinger_df)
+
+
 def aggreger_område(kv_id):
     """Aggregerer data for område."""
     db = get_db()

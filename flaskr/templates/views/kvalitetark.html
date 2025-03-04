@@ -19,11 +19,40 @@
   {% if vtid %}
   <div>       
     <form method="post">
-      <label for="områder">Velg område:</label>
+      <label for="vegkategorier">Velg vegkategori:</label>
+      <select name="vegkategorier" id="vegkategorier">
+        <option value="0">Alle</option>
+        {% for vegkategori in vegkategorier %}
+          <option value="{{ vegkategori }}">{{ vegkategori }}</option>
+        {% endfor %}
+      </select>  
+      <label for="vegsystemer">Velg vegsystem:</label>
+      <select name="vegsystemer" id="vegsystemer">
+        <option value="0">Alle</option>
+        {% for vegsystem in vegsystemer %}
+          <option value="{{ vegsystem['id'] }}">{{ vegsystem['navn'] }}</option>
+        {% endfor %}
+      </select>
+      <label for="fylker">Velg fylke:</label>
+      <select name="fylker" id="fylker">
+        <option value="0">Alle</option>
+        {% for fylke in fylker %}
+          <option value="{{ fylke['id'] }}">{{ fylke['navn'] }}</option>
+        {% endfor %}
+      </select>
+      <label for="kommuner">Velg kommune:</label>
+      <select name="kommuner" id="kommuner">
+        <option value="0">Alle</option>
+        {% for kommune in kommuner %}
+          <option value="{{ kommune['id'] }}">{{ kommune['navn'] }}</option>
+        {% endfor %}
+      </select>
+      <label for="områder">Velg vegstrekning:</label>
       <select name="områder" id="områder">
-      {% for område in områder %}
-        <option value="{{ område['id'] }}" {% if omrade_id is defined and område['id'] | string() == omrade_id | string() %}selected{% endif %}>{{ område['navn'] }}</option>
-      {% endfor %}
+        <option value="0">Alle</option>
+        {% for område in områder %}
+          <option value="{{ område['id'] }}" {% if omrade_id is defined and område['id'] | string() == omrade_id | string() %}selected{% endif %}>{{ område['navn'] }}</option>
+        {% endfor %}
       </select>  
       <button type="submit" name="område" value="vt_område_filter">Velg</button>
     </form>
@@ -161,7 +190,7 @@
       var filteredReferanseverdier = referanseverdier.filter(dict => dict.kvid == kvalitetselement_id);
       var referanseverdi = filteredReferanseverdier[0]['verdi']
       var verdier = filteredKvalitetsmålinger.map(dict => (dict['verdi'] / referanseverdi * 100).toFixed(2));
-      var område = områder.filter(dict => dict.id == område_id)[0]['navn']
+      var område = "{{ område_navn }}";//områder.filter(dict => dict.id == område_id)[0]['navn']
     
       filteredEgenskapstyper = egenskapstyper.filter(dict => dict.vegobjekttype_id === vtid);
       if (kvalitetselement_id == 14){
