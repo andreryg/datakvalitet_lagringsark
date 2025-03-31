@@ -42,7 +42,7 @@ def add_kvalitetsmålinger():
     
     vegobjekttyper = [dict(row) for row in vegobjekttyper]
     for vegobjekttype in vegobjekttyper:
-        if vegobjekttype['vt_id'] == 470:
+        if vegobjekttype['vt_id'] == 3:
             kvalitet = Automatisk_registrer_kvalitet(vegobjekttype['vt_id'])
     
     db.commit()
@@ -148,6 +148,9 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
             elif vegkategori != "0":
                 sql_filter = "vegkategori.kortnavn = ?"
                 filter = (vtid, vegkategori,)
+            else:
+                sql_filter = ""
+                filter = (vtid,)
 
             if omrade_id != "0":
                 område_navn = db.execute(
@@ -200,42 +203,42 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
             kvalitetselement = [dict(row) for row in kvalitetselement]
             vegobjektnavn = next((i.get('navn') for i in vegobjekttyper if i.get('id') == vtid),'Noe galt har skjedd')
             områdenavn = next((i.get('navn') for i in vegstrekninger if i.get('id') == omrade_id), 'Noe galt har skjedd')
-            kv = f"""SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(kvalitetsmåling.verdi) as verdi, {sql_filter.replace(" = ?", "").replace(" AND ", ", ")}
+            kv = f"""SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(kvalitetsmåling.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
                 FROM kvalitetsmåling
                 INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
                 LEFT JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
                 join vegstrekning on kvalitetsmåling.vegstrekning_id = vegstrekning.id
                 left join vegsystem on vegstrekning.vegsystem_id = vegsystem.id
                 left join vegkategori on vegsystem.vegkategori_id = vegkategori.id
-                WHERE kvalitetsmåling.vegobjekttype_id = ? AND {sql_filter}
-                GROUP BY kvalitetsmåling.kvalitetselement_id, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn, {sql_filter.replace(" = ?", "").replace(" AND ", ", ")}
+                WHERE kvalitetsmåling.vegobjekttype_id = ? {"AND "+sql_filter if sql_filter else ""}
+                GROUP BY kvalitetsmåling.kvalitetselement_id, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
                 ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id"""
             print(kv)
             print(filter)
             kvalitetsmålinger = db.execute(
-                f"""SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(kvalitetsmåling.verdi) as verdi, {sql_filter.replace(" = ?", "").replace(" AND ", ", ")}
+                f"""SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(kvalitetsmåling.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
                 FROM kvalitetsmåling
                 INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
                 LEFT JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
                 join vegstrekning on kvalitetsmåling.vegstrekning_id = vegstrekning.id
                 left join vegsystem on vegstrekning.vegsystem_id = vegsystem.id
                 left join vegkategori on vegsystem.vegkategori_id = vegkategori.id
-                WHERE kvalitetsmåling.vegobjekttype_id = ? AND {sql_filter}
-                GROUP BY kvalitetsmåling.kvalitetselement_id, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn, {sql_filter.replace(" = ?", "").replace(" AND ", ", ")}
+                WHERE kvalitetsmåling.vegobjekttype_id = ? {"AND "+sql_filter if sql_filter else ""}
+                GROUP BY kvalitetsmåling.kvalitetselement_id, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
                 ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id""",
                 filter
                 ).fetchall()
             kvalitetsmålinger = [dict(row) for row in kvalitetsmålinger]
             kvalitetselement_relevant_ider = list(set([str(item['kvid']) for item in kvalitetsmålinger]))
             referanseverdier = db.execute(
-                f"""SELECT referanseverdi.kvalitetselement_id AS kvid, referanseverdi.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, SUM(referanseverdi.verdi) as verdi, {sql_filter.replace(" = ?", "").replace(" AND ", ", ").replace("kvalitetsmåling", "referanseverdi")}
+                f"""SELECT referanseverdi.kvalitetselement_id AS kvid, referanseverdi.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, SUM(referanseverdi.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ").replace("kvalitetsmåling", "referanseverdi") if sql_filter else ""}
                 FROM referanseverdi
                 INNER JOIN vegobjekttype ON referanseverdi.vegobjekttype_id = vegobjekttype.id
                 join vegstrekning on referanseverdi.vegstrekning_id = vegstrekning.id
                 left join vegsystem on vegstrekning.vegsystem_id = vegsystem.id
                 left join vegkategori on vegsystem.vegkategori_id = vegkategori.id
-                WHERE referanseverdi.vegobjekttype_id = ? AND {sql_filter.replace("kvalitetsmåling", "referanseverdi")}
-                GROUP BY referanseverdi.kvalitetselement_id, referanseverdi.vegobjekttype_id, vegobjekttype.navn, {sql_filter.replace(" = ?", "").replace(" AND ", ", ").replace("kvalitetsmåling", "referanseverdi")}
+                WHERE referanseverdi.vegobjekttype_id = ? {"AND "+sql_filter.replace("kvalitetsmåling", "referanseverdi") if sql_filter else ""}
+                GROUP BY referanseverdi.kvalitetselement_id, referanseverdi.vegobjekttype_id, vegobjekttype.navn{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ").replace("kvalitetsmåling", "referanseverdi") if sql_filter else ""}
                 ORDER BY referanseverdi.vegobjekttype_id""",
                 filter
                 ).fetchall()

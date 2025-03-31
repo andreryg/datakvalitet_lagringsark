@@ -34,7 +34,7 @@ class Automatisk_registrer_kvalitet():
         self.df['vegstrekning'] = self.df['vegsystemreferanse'].apply(lambda x: [i.get('kortform').split("D")[0] for i in x])
         vegstrekninger = self.df['vegstrekning'].explode().unique().tolist()
 
-        for vegstrekning in vegstrekninger:
+        for vegstrekning in tqdm.tqdm(vegstrekninger):
             self.temp_df = self.df[self.df['vegstrekning'].apply(lambda x: vegstrekning in x)]
             if vegstrekning[0] in ["F", "E", "R"]:
                 fylker = self.temp_df['fylke'].explode().unique().tolist()
