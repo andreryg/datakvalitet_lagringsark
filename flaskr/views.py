@@ -213,7 +213,7 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
                 WHERE kvalitetsmåling.vegobjekttype_id = ? {"AND "+sql_filter if sql_filter else ""}
                 GROUP BY kvalitetsmåling.kvalitetselement_id, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
                 ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id"""
-            print(kv)
+            #print(kv)
             print(filter)
             kvalitetsmålinger = db.execute(
                 f"""SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(kvalitetsmåling.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
