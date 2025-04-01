@@ -90,25 +90,16 @@ class Automatisk_registrer_kvalitet():
         if isinstance(self.kvalitetsmåling, int):
             #Hvis kvaliteten er på vegobjektnivå
             db.execute(
-                "INSERT INTO kvalitetsmåling (kvalitetselement_id, vegobjekttype_id, verdi, vegstrekning_id) VALUES (?, ?, ?, ?)",
-                (kvalitetselement_id, self.vegobjekttype_id, self.kvalitetsmåling, vegstrekning_id)
+                "INSERT INTO kvalitetsmåling (kvalitetselement_id, vegobjekttype_id, verdi, ref_verdi, vegstrekning_id) VALUES (?, ?, ?, ?, ?)",
+                (kvalitetselement_id, self.vegobjekttype_id, self.kvalitetsmåling, self.referanseverdi, vegstrekning_id)
                 )
         elif isinstance(self.kvalitetsmåling, dict):
             #Hvis kvaliteten er på egenskapstypenivå
             for egenskapstype_id, verdi in self.kvalitetsmåling.items():
                 db.execute(
-                    "INSERT INTO kvalitetsmåling (kvalitetselement_id, vegobjekttype_id, egenskapstype_id, verdi, vegstrekning_id) VALUES (?, ?, ?, ?, ?)",
-                    (kvalitetselement_id, self.vegobjekttype_id, egenskapstype_id, verdi, vegstrekning_id)
+                    "INSERT INTO kvalitetsmåling (kvalitetselement_id, vegobjekttype_id, egenskapstype_id, verdi, ref_verdi, vegstrekning_id) VALUES (?, ?, ?, ?, ?, ?)",
+                    (kvalitetselement_id, self.vegobjekttype_id, egenskapstype_id, verdi, self.referanseverdi, vegstrekning_id)
                     )
-        sjekk = db.execute(
-            "SELECT * FROM referanseverdi WHERE kvalitetselement_id = ? AND vegstrekning_id = ? AND vegobjekttype_id = ?",
-            (kvalitetselement_id, vegstrekning_id, self.vegobjekttype_id)
-            ).fetchone()
-        if not sjekk:
-            db.execute(
-                "INSERT INTO referanseverdi (kvalitetselement_id, vegobjekttype_id, verdi, vegstrekning_id) VALUES (?, ?, ?, ?)",
-                (kvalitetselement_id, self.vegobjekttype_id, self.referanseverdi, vegstrekning_id)
-                )
         return True
 
 if __name__ == "__main__":

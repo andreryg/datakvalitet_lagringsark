@@ -31,7 +31,7 @@ def hent_data(vtid, vegkategori, vegsystem_id, fylke_id, kommune_id, vegstreknin
     sql_filter, filter = sql_filter_func(vtid, vegkategori, vegsystem_id, fylke_id, kommune_id, vegstrekning_id)
 
     db = get_db()
-    kvalitetsmålinger_nå = db.execute(
+    kvalitetsmålinger = db.execute(
         f"""WITH RankedEntries AS (
             SELECT
                 *,
@@ -39,7 +39,7 @@ def hent_data(vtid, vegkategori, vegsystem_id, fylke_id, kommune_id, vegstreknin
             FROM
                 kvalitetsmåling
         )
-        SELECT RankedEntries.kvalitetselement_id AS kvid, RankedEntries.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, RankedEntries.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(RankedEntries.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
+        SELECT RankedEntries.kvalitetselement_id AS kvid, RankedEntries.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, RankedEntries.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(RankedEntries.verdi) as verdi, SUM(RankedEntries.ref_verdi) as ref_verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
         FROM RankedEntries
         INNER JOIN vegobjekttype ON RankedEntries.vegobjekttype_id = vegobjekttype.id
         LEFT JOIN egenskapstype ON RankedEntries.egenskapstype_id = egenskapstype.id
@@ -51,7 +51,7 @@ def hent_data(vtid, vegkategori, vegsystem_id, fylke_id, kommune_id, vegstreknin
         ORDER BY RankedEntries.vegobjekttype_id, RankedEntries.egenskapstype_id""",
         filter
         ).fetchall()
-    kvalitetsmålinger_nå = [dict(row) for row in kvalitetsmålinger_nå]
+    kvalitetsmålinger = [dict(row) for row in kvalitetsmålinger]
 
     kvalitetsmålinger_forrige = db.execute(
         f"""WITH RankedEntries AS (
@@ -61,7 +61,7 @@ def hent_data(vtid, vegkategori, vegsystem_id, fylke_id, kommune_id, vegstreknin
             FROM
                 kvalitetsmåling
         )
-        SELECT RankedEntries.kvalitetselement_id AS kvid, RankedEntries.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, RankedEntries.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(RankedEntries.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
+        SELECT RankedEntries.kvalitetselement_id AS kvid, RankedEntries.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, RankedEntries.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(RankedEntries.verdi) as verdi, SUM(RankedEntries.ref_verdi) as ref_verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
         FROM RankedEntries
         INNER JOIN vegobjekttype ON RankedEntries.vegobjekttype_id = vegobjekttype.id
         LEFT JOIN egenskapstype ON RankedEntries.egenskapstype_id = egenskapstype.id
@@ -75,46 +75,9 @@ def hent_data(vtid, vegkategori, vegsystem_id, fylke_id, kommune_id, vegstreknin
         ).fetchall()
     kvalitetsmålinger_forrige = [dict(row) for row in kvalitetsmålinger_forrige]
 
-    referanseverdier_nå = db.execute(
-        f"""WITH RankedEntries AS (
-            SELECT
-                *,
-                ROW_NUMBER() OVER (PARTITION BY kvalitetselement_id, vegobjekttype_id, vegstrekning_id ORDER BY dato DESC) AS rank
-            FROM
-                referanseverdi
-        )
-        SELECT RankedEntries.kvalitetselement_id AS kvid, RankedEntries.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, SUM(RankedEntries.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ").replace("kvalitetsmåling", "RankedEntries") if sql_filter else ""}
-        FROM RankedEntries
-        INNER JOIN vegobjekttype ON RankedEntries.vegobjekttype_id = vegobjekttype.id
-        join vegstrekning on RankedEntries.vegstrekning_id = vegstrekning.id
-        left join vegsystem on vegstrekning.vegsystem_id = vegsystem.id
-        left join vegkategori on vegsystem.vegkategori_id = vegkategori.id
-        WHERE RankedEntries.vegobjekttype_id = ? AND RankedEntries.rank = 1 {"AND "+sql_filter.replace("kvalitetsmåling", "RankedEntries") if sql_filter else ""}
-        GROUP BY RankedEntries.kvalitetselement_id, RankedEntries.vegobjekttype_id, vegobjekttype.navn{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
-        ORDER BY RankedEntries.vegobjekttype_id""",
-        filter
-        ).fetchall()
-    referanseverdier_nå = [dict(row) for row in referanseverdier_nå]
-    
-    referanseverdier_forrige = db.execute(
-        f"""WITH RankedEntries AS (
-            SELECT
-                *,
-                ROW_NUMBER() OVER (PARTITION BY kvalitetselement_id, vegobjekttype_id, vegstrekning_id ORDER BY dato DESC) AS rank
-            FROM
-                referanseverdi
-        )
-        SELECT RankedEntries.kvalitetselement_id AS kvid, RankedEntries.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, SUM(RankedEntries.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ").replace("kvalitetsmåling", "RankedEntries") if sql_filter else ""}
-        FROM RankedEntries
-        INNER JOIN vegobjekttype ON RankedEntries.vegobjekttype_id = vegobjekttype.id
-        join vegstrekning on RankedEntries.vegstrekning_id = vegstrekning.id
-        left join vegsystem on vegstrekning.vegsystem_id = vegsystem.id
-        left join vegkategori on vegsystem.vegkategori_id = vegkategori.id
-        WHERE RankedEntries.vegobjekttype_id = ? AND RankedEntries.rank = 2 {"AND "+sql_filter.replace("kvalitetsmåling", "RankedEntries") if sql_filter else ""}
-        GROUP BY RankedEntries.kvalitetselement_id, RankedEntries.vegobjekttype_id, vegobjekttype.navn{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
-        ORDER BY RankedEntries.vegobjekttype_id""",
-        filter
-        ).fetchall()
-    referanseverdier_forrige = [dict(row) for row in referanseverdier_forrige]
+    for row in kvalitetsmålinger:
+        row['verdi_forrige'] = next((item['verdi'] for item in kvalitetsmålinger_forrige if item['kvid'] == row['kvid'] and item['vtid'] == row['vtid'] and (item['etid'] is None or item['etid'] == row['etid'])), None)
+        row['ref_verdi_forrige'] = next((item['ref_verdi'] for item in kvalitetsmålinger_forrige if item['kvid'] == row['kvid'] and item['vtid'] == row['vtid']), None)
 
-    return kvalitetsmålinger_nå, kvalitetsmålinger_forrige, referanseverdier_nå, referanseverdier_forrige
+    #print(kvalitetsmålinger)
+    return kvalitetsmålinger

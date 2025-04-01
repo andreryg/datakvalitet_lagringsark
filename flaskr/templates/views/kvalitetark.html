@@ -104,7 +104,6 @@
     const omrade_id = {{ omrade_id }};
     const kvalitetsmålinger = {{ kvalitetsmålinger | tojson }};
     console.log(kvalitetsmålinger)
-    const referanseverdier = {{ referanseverdier | tojson }};
     const skala = {{ skala | tojson }};
     const defaultSkala = skala.filter(dict => dict.id === 1);
     const filteredVegobjekttyper = vegobjekttyper.filter(dict => dict.id === vtid);
@@ -115,6 +114,7 @@
     const chartHeights = {'13': '1000px', '14':'500px','15':'500px', '28':'300px','30':'300px','58':'300px','59':'300px','62':'300px','5':'500px','6':'500px','7':'300px'}
 
     document.getElementById('område_kvalitetselement').addEventListener('click', function() {
+      // Lager ett nytt canvas for hvert relevant kvalitetselement
       for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
         let chartStatus = Chart.getChart(kvalitetselement_relevant_ider[i-1]); // <canvas> id
         if (chartStatus != undefined) {
@@ -124,11 +124,13 @@
       
       var kvalitetselement_id = document.getElementById('kvalitetselement-filter').value;
       var sammenlign_område_id = document.getElementById('sammenlign-område').value;
+      // Hvis kvalitetselement_id er 0, vis alle kvalitetselementene
       if(kvalitetselement_id == 0){
         for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
           document.getElementById(`canvas_div_${kvalitetselement_relevant_ider[i-1]}`).style.height = chartHeights[kvalitetselement_relevant_ider[i-1]];
           createElement(kvalitetselement_relevant_ider[i-1], kvalitetselement_relevant_ider[i-1], sammenlign_område_id);
         }
+      // Hvis ikke sett størrelsen til alle canvasene til 0, og sett størrelsen til det valgte canvaset
       } else {
         for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
           document.getElementById(`canvas_div_${kvalitetselement_relevant_ider[i-1]}`).style.height = '0px';
@@ -137,59 +139,65 @@
         createElement(kvalitetselement_id, kvalitetselement_id, sammenlign_område_id)
       }
     });
+
     function createElement(chart_id, kvalitetselement_id, sammenlign_område_id){
+      // Forbereder data for tegning av graf
       var kvalitetselement_navn = kvalitetselementer.filter(dict => dict.id == kvalitetselement_id)[0]['navn'];
-        var data = prepareData(kvalitetsmålinger, referanseverdier, kvalitetselement_id, omrade_id);
-        var verdier = data[0];
-        var område = data[1];
-        var labelNames = data[2]
-        var finn_skala = skala.filter(dict => dict.vegobjekttype_id == vtid && dict.kvalitetselement_id == kvalitetselement_id);
-        if (finn_skala.length > 0) {
-          var valgt_skala = finn_skala
-        } else {
-          var valgt_skala = defaultSkala
-        }
-        if(sammenlign_område_id == 0){
-          drawGraph(chart_id, verdier, null, labelNames, område, null, 70, kvalitetselement_navn, valgt_skala);
-        } else {
-          console.log(sammenlign_område_id)
-          fetch("http://127.0.0.1:5727/add_område",
-          {
-            method: 'POST',
-            headers: {
-              'Content-type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify([vtid, sammenlign_område_id])
-          }).then(res => {
-            if (res.ok){
-              return res.json();
-            } else {
-              return null;
-            }
-          }).then(jsonResponse => {
-            if (jsonResponse) {
-              console.log(jsonResponse['sammenlign_kvalitetsmålinger']);
-              var data2 = prepareData(jsonResponse['sammenlign_kvalitetsmålinger'], jsonResponse['sammenlign_referanseverdier'], kvalitetselement_id, sammenlign_område_id);
-              var verdier2 = data2[0]
-              var område2 = data2[1]
-              var labelNames = data2[2]
-              drawGraph(chart_id, verdier, verdier2, labelNames, område, område2, 70, kvalitetselement_navn, valgt_skala)
-            }
-          }).catch((err) => console.error(err));
-        }
+      var data = prepareData(kvalitetsmålinger, kvalitetselement_id, omrade_id);
+      var verdier = data[0];
+      var område = data[1];
+      var labelNames = data[2]
+      var finn_skala = skala.filter(dict => dict.vegobjekttype_id == vtid && dict.kvalitetselement_id == kvalitetselement_id);
+      // Velger riktig skala, hvis det ikke finnes en skala for det valgte kvalitetselementet, bruk defaultSkala
+      if (finn_skala.length > 0) {
+        var valgt_skala = finn_skala
+      } else {
+        var valgt_skala = defaultSkala
+      }
+      // Tegner graf hvis ikke sammenlign område er valgt, ellers hent data for sammenligningsområde og tegn graf
+      if(sammenlign_område_id == 0){
+        drawGraph(chart_id, verdier, null, labelNames, område, null, 70, kvalitetselement_navn, valgt_skala);
+      } else {
+        console.log(sammenlign_område_id)
+        fetch("http://127.0.0.1:5727/add_område",
+        {
+          method: 'POST',
+          headers: {
+            'Content-type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify([vtid, sammenlign_område_id])
+        }).then(res => {
+          if (res.ok){
+            return res.json();
+          } else {
+            return null;
+          }
+        }).then(jsonResponse => {
+          if (jsonResponse) {
+            console.log(jsonResponse['sammenlign_kvalitetsmålinger']);
+            var data2 = prepareData(jsonResponse['sammenlign_kvalitetsmålinger'], jsonResponse['sammenlign_referanseverdier'], kvalitetselement_id, sammenlign_område_id);
+            var verdier2 = data2[0]
+            var område2 = data2[1]
+            var labelNames = data2[2]
+            drawGraph(chart_id, verdier, verdier2, labelNames, område, område2, 70, kvalitetselement_navn, valgt_skala)
+          }
+        }).catch((err) => console.error(err));
+      }
     }
 
-    function prepareData(kvalitetsmålinger, referanseverdier, kvalitetselement_id, område_id){
+    function prepareData(kvalitetsmålinger, kvalitetselement_id, område_id){
       var filteredKvalitetsmålinger = kvalitetsmålinger.filter(dict => dict.kvid == kvalitetselement_id);
       if (filteredKvalitetsmålinger.length > 1){
         var sum = filteredKvalitetsmålinger.reduce((acc, curr) => acc + curr.verdi, 0);
         var avg = sum / filteredKvalitetsmålinger.length;
-        filteredKvalitetsmålinger.unshift({ verdi: avg });
+        var prev_sum = filteredKvalitetsmålinger.reduce((acc, curr) => acc + curr.verdi_forrige, 0);
+        var prev_avg = prev_sum / filteredKvalitetsmålinger.length;
+        var ref_verdi = filteredKvalitetsmålinger[0]['ref_verdi'];
+        var prev_ref_verdi = filteredKvalitetsmålinger[0]['ref_verdi_forrige'];
+        filteredKvalitetsmålinger.unshift({ verdi: avg, verdi_forrige: prev_avg, ref_verdi: ref_verdi, ref_verdi_forrige: prev_ref_verdi });
       }
-      var filteredReferanseverdier = referanseverdier.filter(dict => dict.kvid == kvalitetselement_id);
-      var referanseverdi = filteredReferanseverdier[0]['verdi']
-      var verdier = filteredKvalitetsmålinger.map(dict => (dict['verdi'] / referanseverdi * 100).toFixed(2));
+      var verdier = filteredKvalitetsmålinger.map(dict => (dict['verdi'] / dict['ref_verdi'] * 100).toFixed(2));
       var område = "{{ område_navn }}";//områder.filter(dict => dict.id == område_id)[0]['navn']
     
       filteredEgenskapstyper = egenskapstyper.filter(dict => dict.vegobjekttype_id === vtid);
@@ -197,7 +205,9 @@
         filteredEgenskapstyper = filteredEgenskapstyper.filter(dict => dict.viktighet === "PÅKREVD_IKKE_ABSOLUTT" || dict.viktighet === "PÅKREVD_ABSOLUTT")
       } else if (kvalitetselement_id == 15){
         filteredEgenskapstyper = filteredEgenskapstyper.filter(dict => dict.viktighet === "BETINGET")
-      } else if (['28','30','58','59','62'].includes(kvalitetselement_id)){
+      } else if ([13].includes(kvalitetselement_id)){
+        filteredEgenskapstyper = filteredEgenskapstyper;
+      } else {
         filteredEgenskapstyper = [];
       }
       var labels = filteredVegobjekttyper.concat(filteredEgenskapstyper);

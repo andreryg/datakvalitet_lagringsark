@@ -3,6 +3,7 @@ from flaskr.db import get_db
 from flaskr.aggregering import aggreger_vegstrekninger
 import requests
 import tqdm
+from hent_data import hent_data
 bp = Blueprint('views', __name__)
 
 @bp.route('/', methods=('GET', 'POST'))
@@ -50,7 +51,8 @@ def add_kvalitetsmålinger():
 
 @bp.route('/aggreger', methods=('GET', 'POST'))
 def aggreger():
-    from flaskr.aggregering import aggreger_område, aggreger_vegobjekttype
+    hent_data("3", "E", "0", "0", "0", "0")
+    """from flaskr.aggregering import aggreger_område, aggreger_vegobjekttype
     db = get_db()
     kvalitetselementer = db.execute(
         "SELECT * FROM kvalitetselement"
@@ -61,7 +63,7 @@ def aggreger():
             aggreger_område(kvalitetselement['id'])
             aggreger_vegobjekttype(kvalitetselement['id'])
         elif kvalitetselement['id'] in [30, 58, 59, 62]:
-            aggreger_område(kvalitetselement['id'])
+            aggreger_område(kvalitetselement['id'])"""
     return redirect(url_for('views.index'))
 
 @bp.route('/kvalitetregistrering', methods=('GET', 'POST'))
@@ -113,46 +115,6 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
 
         if vtid is not None and not all(x is None for x in [vegkategori, vegsystem_id, fylke_id, kommune_id, omrade_id]):
             if omrade_id != "0":
-                if kommune_id != "0":
-                    sql_filter = "kvalitetsmåling.vegstrekning_id = ? AND vegstrekning.kommune_id = ?"
-                    filter = (vtid, omrade_id, kommune_id,)
-                elif fylke_id != "0":
-                    sql_filter = "kvalitetsmåling.vegstrekning_id = ? AND vegstrekning.fylke_id = ?"
-                    filter = (vtid, omrade_id, fylke_id,)
-                else:
-                    sql_filter = "kvalitetsmåling.vegstrekning_id = ?"
-                    filter = (vtid, omrade_id,)
-            elif kommune_id != "0":
-                if vegsystem_id:
-                    sql_filter = "vegstrekning.kommune_id = ? AND vegstrekning.vegsystem_id = ?"
-                    filter = (vtid, kommune_id, vegsystem_id,)
-                elif vegkategori != "0":
-                    sql_filter = "vegstrekning.kommune_id = ? AND vegkategori.kortnavn = ?"
-                    filter = (vtid, kommune_id, vegkategori,)
-                else:
-                    sql_filter = "vegstrekning.kommune_id = ?"
-                    filter = (vtid, kommune_id,)
-            elif fylke_id != "0":
-                if vegsystem_id != "0":
-                    sql_filter = "vegstrekning.fylke_id = ? AND vegstrekning.vegsystem_id = ?"
-                    filter = (vtid, fylke_id, vegsystem_id,)
-                elif vegkategori != "0":
-                    sql_filter = "vegstrekning.fylke_id = ? AND vegkategori.kortnavn = ?"
-                    filter = (vtid, fylke_id, vegkategori,)
-                else:
-                    sql_filter = "vegstrekning.fylke_id = ?"
-                    filter = (vtid, fylke_id,)
-            elif vegsystem_id != "0":
-                sql_filter = "vegstrekning.vegsystem_id = ?"
-                filter = (vtid, vegsystem_id,)
-            elif vegkategori != "0":
-                sql_filter = "vegkategori.kortnavn = ?"
-                filter = (vtid, vegkategori,)
-            else:
-                sql_filter = ""
-                filter = (vtid,)
-
-            if omrade_id != "0":
                 område_navn = db.execute(
                     """SELECT navn FROM vegstrekning WHERE id = ?""",
                     (omrade_id,)
@@ -189,6 +151,8 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
                 kommune_navn = ""
             område_navn = vegkategori_navn + " " + vegsystem_navn + " " + fylke_navn + " " + kommune_navn + " " + område_navn
             område_navn = " ".join(område_navn.split())
+            if område_navn == "":
+                område_navn = "Alle"
 
             egenskapstyper = db.execute(
                 """SELECT * FROM egenskapstype"""
@@ -201,54 +165,13 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
                 join kvalitetsnivå_2 on kvalitetselement.kvalitetsnivå_2 = kvalitetsnivå_2.id"""
             ).fetchall()
             kvalitetselement = [dict(row) for row in kvalitetselement]
-            vegobjektnavn = next((i.get('navn') for i in vegobjekttyper if i.get('id') == vtid),'Noe galt har skjedd')
-            områdenavn = next((i.get('navn') for i in vegstrekninger if i.get('id') == omrade_id), 'Noe galt har skjedd')
-            kv = f"""SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(kvalitetsmåling.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
-                FROM kvalitetsmåling
-                INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
-                LEFT JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
-                join vegstrekning on kvalitetsmåling.vegstrekning_id = vegstrekning.id
-                left join vegsystem on vegstrekning.vegsystem_id = vegsystem.id
-                left join vegkategori on vegsystem.vegkategori_id = vegkategori.id
-                WHERE kvalitetsmåling.vegobjekttype_id = ? {"AND "+sql_filter if sql_filter else ""}
-                GROUP BY kvalitetsmåling.kvalitetselement_id, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
-                ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id"""
-            #print(kv)
-            print(filter)
-            kvalitetsmålinger = db.execute(
-                f"""SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, SUM(kvalitetsmåling.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
-                FROM kvalitetsmåling
-                INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
-                LEFT JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
-                join vegstrekning on kvalitetsmåling.vegstrekning_id = vegstrekning.id
-                left join vegsystem on vegstrekning.vegsystem_id = vegsystem.id
-                left join vegkategori on vegsystem.vegkategori_id = vegkategori.id
-                WHERE kvalitetsmåling.vegobjekttype_id = ? {"AND "+sql_filter if sql_filter else ""}
-                GROUP BY kvalitetsmåling.kvalitetselement_id, kvalitetsmåling.vegobjekttype_id, vegobjekttype.navn, kvalitetsmåling.egenskapstype_id, egenskapstype.navn{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ") if sql_filter else ""}
-                ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id""",
-                filter
-                ).fetchall()
-            kvalitetsmålinger = [dict(row) for row in kvalitetsmålinger]
-            kvalitetselement_relevant_ider = list(set([str(item['kvid']) for item in kvalitetsmålinger]))
-            referanseverdier = db.execute(
-                f"""SELECT referanseverdi.kvalitetselement_id AS kvid, referanseverdi.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, SUM(referanseverdi.verdi) as verdi{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ").replace("kvalitetsmåling", "referanseverdi") if sql_filter else ""}
-                FROM referanseverdi
-                INNER JOIN vegobjekttype ON referanseverdi.vegobjekttype_id = vegobjekttype.id
-                join vegstrekning on referanseverdi.vegstrekning_id = vegstrekning.id
-                left join vegsystem on vegstrekning.vegsystem_id = vegsystem.id
-                left join vegkategori on vegsystem.vegkategori_id = vegkategori.id
-                WHERE referanseverdi.vegobjekttype_id = ? {"AND "+sql_filter.replace("kvalitetsmåling", "referanseverdi") if sql_filter else ""}
-                GROUP BY referanseverdi.kvalitetselement_id, referanseverdi.vegobjekttype_id, vegobjekttype.navn{", "+sql_filter.replace(" = ?", "").replace(" AND ", ", ").replace("kvalitetsmåling", "referanseverdi") if sql_filter else ""}
-                ORDER BY referanseverdi.vegobjekttype_id""",
-                filter
-                ).fetchall()
-            referanseverdier = [dict(row) for row in referanseverdier]
+            kvalitetsmålinger = hent_data(vtid, vegkategori, vegsystem_id, fylke_id, kommune_id, omrade_id)
+            kvalitetselement_relevante_ider = list(set([item['kvid'] for item in kvalitetsmålinger]))
             skala = db.execute(
                 """SELECT * FROM skala"""
             ).fetchall()
             skala = [dict(row) for row in skala]
-            print(kvalitetsmålinger, referanseverdier)
-            return render_template('views/kvalitetark.html', vtid=vtid, omrade_id=omrade_id, vegobjekttyper_=vegobjekttyper_, vegobjekttyper=vegobjekttyper, egenskapstyper=egenskapstyper, områder=vegstrekninger, kvalitetselementer=kvalitetselement, kvalitetselement_relevant_ider=kvalitetselement_relevant_ider, kvalitetsmålinger=kvalitetsmålinger, referanseverdier=referanseverdier, skala=skala, vegkategorier=vegkategorier, vegsystemer=vegsystemer, fylker=fylker, kommuner=kommuner, område_navn=område_navn)
+            return render_template('views/kvalitetark.html', vtid=vtid, omrade_id=omrade_id, vegobjekttyper_=vegobjekttyper_, vegobjekttyper=vegobjekttyper, egenskapstyper=egenskapstyper, områder=vegstrekninger, kvalitetselementer=kvalitetselement, kvalitetselement_relevant_ider=kvalitetselement_relevante_ider, kvalitetsmålinger=kvalitetsmålinger, skala=skala, vegkategorier=vegkategorier, vegsystemer=vegsystemer, fylker=fylker, kommuner=kommuner, område_navn=område_navn)
 
         if vtid is not None:
             return render_template('views/kvalitetark.html', vegobjekttyper_=vegobjekttyper_, områder=vegstrekninger, vtid=vtid, vegkategorier=vegkategorier, vegsystemer=vegsystemer, fylker=fylker, kommuner=kommuner)

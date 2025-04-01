@@ -99,6 +99,7 @@ CREATE TABLE kvalitetsmåling (
     vegobjekttype_id INTEGER NOT NULL,
     egenskapstype_id INTEGER,
     verdi INTEGER NOT NULL,
+    ref_verdi INTEGER NOT NULL,
     dato TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     vegstrekning_id INTEGER NOT NULL,
     FOREIGN KEY (kvalitetselement_id) REFERENCES kvalitetselement (id),
@@ -106,19 +107,6 @@ CREATE TABLE kvalitetsmåling (
     FOREIGN KEY (egenskapstype_id) REFERENCES egenskapstype (id),
     FOREIGN KEY (vegstrekning_id) REFERENCES vegstrekning (id)
 );
-
-CREATE TABLE referanseverdi (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    kvalitetselement_id INTEGER NOT NULL,
-    vegobjekttype_id INTEGER NOT NULL,
-    verdi INTEGER NOT NULL,
-    dato TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    vegstrekning_id INTEGER NOT NULL,
-    FOREIGN KEY (kvalitetselement_id) REFERENCES kvalitetselement (id),
-    FOREIGN KEY (vegobjekttype_id) REFERENCES vegobjekttype (id),
-    FOREIGN KEY (vegstrekning_id) REFERENCES vegstrekning (id)
-);
-
 
 CREATE TABLE skala (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
