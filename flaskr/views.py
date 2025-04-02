@@ -3,7 +3,8 @@ from flaskr.db import get_db
 from flaskr.aggregering import aggreger_vegstrekninger
 import requests
 import tqdm
-from hent_data import hent_data
+from flaskr.hent_data import hent_data
+from flaskr.generer_label import generer_label
 bp = Blueprint('views', __name__)
 
 @bp.route('/', methods=('GET', 'POST'))
@@ -114,45 +115,7 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
             kommuner = [i for n, i in enumerate(kommuner) if i not in kommuner[n + 1:]]
 
         if vtid is not None and not all(x is None for x in [vegkategori, vegsystem_id, fylke_id, kommune_id, omrade_id]):
-            if omrade_id != "0":
-                område_navn = db.execute(
-                    """SELECT navn FROM vegstrekning WHERE id = ?""",
-                    (omrade_id,)
-                ).fetchone()[0]
-            else:
-                område_navn = ""
-            if vegkategori != "0":
-                vegkategori_navn = db.execute(
-                    """SELECT navn FROM vegkategori WHERE kortnavn = ?""",
-                    (vegkategori,)
-                ).fetchone()[0]
-            else:    
-                vegkategori_navn = ""
-            if vegsystem_id != "0":
-                vegsystem_navn = db.execute(
-                    """SELECT vegnummer FROM vegsystem WHERE id = ?""",
-                    (vegsystem_id,)
-                ).fetchone()[0]
-            else:
-                vegsystem_navn = ""
-            if fylke_id != "0":
-                fylke_navn = db.execute(
-                    """SELECT navn FROM fylke WHERE id = ?""",
-                    (fylke_id,)
-                ).fetchone()[0]
-            else:
-                fylke_navn = ""
-            if kommune_id != "0":
-                kommune_navn = db.execute(
-                    """SELECT navn FROM kommune WHERE id = ?""",
-                    (kommune_id,)
-                ).fetchone()[0]
-            else:
-                kommune_navn = ""
-            område_navn = vegkategori_navn + " " + vegsystem_navn + " " + fylke_navn + " " + kommune_navn + " " + område_navn
-            område_navn = " ".join(område_navn.split())
-            if område_navn == "":
-                område_navn = "Alle"
+            område_navn = generer_label(omrade_id, vegkategori, vegsystem_id, fylke_id, kommune_id)
 
             egenskapstyper = db.execute(
                 """SELECT * FROM egenskapstype"""
@@ -195,26 +158,12 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
 def add_område():
     jason = request.get_json()
     vtid = jason[0]
-    område_id = jason[1]
-    db = get_db()
-    sammenlign_kvalitetsmålinger = db.execute(
-        """SELECT kvalitetsmåling.kvalitetselement_id AS kvid, kvalitetsmåling.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, kvalitetsmåling.egenskapstype_id as etid, egenskapstype.navn AS etnavn, kvalitetsmåling.vegstrekning_id, kvalitetsmåling.verdi, kvalitetsmåling.dato 
-        FROM kvalitetsmåling
-        INNER JOIN vegobjekttype ON kvalitetsmåling.vegobjekttype_id = vegobjekttype.id
-        LEFT JOIN egenskapstype ON kvalitetsmåling.egenskapstype_id = egenskapstype.id
-        WHERE kvalitetsmåling.vegobjekttype_id = ? AND kvalitetsmåling.vegstrekning_id = ?
-        ORDER BY kvalitetsmåling.vegobjekttype_id, kvalitetsmåling.egenskapstype_id""",
-        (vtid, område_id)
-        ).fetchall()
-    sammenlign_kvalitetsmålinger = [dict(row) for row in sammenlign_kvalitetsmålinger]
-    sammenlign_referanseverdier = db.execute(
-        """SELECT referanseverdi.kvalitetselement_id AS kvid, referanseverdi.vegobjekttype_id as vtid, vegobjekttype.navn AS vtnavn, referanseverdi.vegstrekning_id, referanseverdi.verdi, referanseverdi.dato 
-        FROM referanseverdi
-        INNER JOIN vegobjekttype ON referanseverdi.vegobjekttype_id = vegobjekttype.id
-        WHERE referanseverdi.vegobjekttype_id = ? AND referanseverdi.vegstrekning_id = ?
-        ORDER BY referanseverdi.vegobjekttype_id""",
-        (vtid, område_id)
-        ).fetchall()
-    sammenlign_referanseverdier = [dict(row) for row in sammenlign_referanseverdier]
-    jason_2 = {'sammenlign_kvalitetsmålinger': sammenlign_kvalitetsmålinger, 'sammenlign_referanseverdier': sammenlign_referanseverdier}
-    return jason_2
+    sammenlign_filter = jason[1].split(";")
+    vegkategori = sammenlign_filter[0]
+    vegsystem_id = sammenlign_filter[1]
+    fylke_id = sammenlign_filter[2]
+    kommune_id = sammenlign_filter[3]
+    område_id = sammenlign_filter[4]
+    område_navn = generer_label(område_id, vegkategori, vegsystem_id, fylke_id, kommune_id)
+    kvalitetsmålinger = hent_data(vtid, vegkategori, vegsystem_id, fylke_id, kommune_id, område_id)
+    return {'sammenlign_kvalitetsmålinger':kvalitetsmålinger, 'område_navn':område_navn}

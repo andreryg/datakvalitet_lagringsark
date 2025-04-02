@@ -70,16 +70,57 @@
       </select>
     </div>
     <div>
-      <label for="sammenlign-område">Sammenlign med område:</label>
-      <select id="sammenlign-område" name="sammenlign-område">
-        <option value = "0">Ingen</option>
-        {% for område in områder %}
-        <option value="{{ område['id'] }}">{{ område['navn'] }}</option>
-        {% endfor %}
-      </select>
+      <button class="sammenlign-button" onClick="openSammenlign()">Sammenlign med område</button>
+      
+
+      <div class="sammenlign-popup" id="sammenlign-form">
+        <form class="sammenlign-container">
+          <h1>Sammenlign med område</h1>
+          <div>
+            <input type="checkbox" id="sammenlign-checkbox" name="sammenlign-checkbox"/>
+            <label for="sammenlign-checkbox">Sammenligning på/av</label>
+          </div>
+          <label for="sammenlign-vegkategorier">Velg vegkategori:</label>
+          <select name="sammenlign-vegkategorier" id="sammenlign-vegkategorier">
+            <option value="0">Alle</option>
+            {% for vegkategori in vegkategorier %}
+              <option value="{{ vegkategori }}">{{ vegkategori }}</option>
+            {% endfor %}
+          </select>  
+          <label for="sammenlign-vegsystemer">Velg vegsystem:</label>
+          <select name="sammenlign-vegsystemer" id="sammenlign-vegsystemer">
+            <option value="0">Alle</option>
+            {% for vegsystem in vegsystemer %}
+              <option value="{{ vegsystem['id'] }}">{{ vegsystem['navn'] }}</option>
+            {% endfor %}
+          </select>
+          <label for="sammenlign-fylker">Velg fylke:</label>
+          <select name="sammenlign-fylker" id="sammenlign-fylker">
+            <option value="0">Alle</option>
+            {% for fylke in fylker %}
+              <option value="{{ fylke['id'] }}">{{ fylke['navn'] }}</option>
+            {% endfor %}
+          </select>
+          <label for="sammenlign-kommuner">Velg kommune:</label>
+          <select name="sammenlign-kommuner" id="sammenlign-kommuner">
+            <option value="0">Alle</option>
+            {% for kommune in kommuner %}
+              <option value="{{ kommune['id'] }}">{{ kommune['navn'] }}</option>
+            {% endfor %}
+          </select>
+          <label for="sammenlign-områder">Velg vegstrekning:</label>
+          <select name="sammenlign-områder" id="sammenlign-områder">
+            <option value="0">Alle</option>
+            {% for område in områder %}
+              <option value="{{ område['id'] }}" {% if omrade_id is defined and område['id'] | string() == omrade_id | string() %}selected{% endif %}>{{ område['navn'] }}</option>
+            {% endfor %}
+          </select>
+          <button type="button" class="sammenlign-button-lukk" onClick="closeSammenlign()">Lukk</button>
+        </form>
+      </div>
     </div>
-    <button type="submit" name="action" id="område_kvalitetselement">Velg</button>
   </div>
+  <button name="action" id="område_kvalitetselement">Velg</button>
   {% endif %}
   {% if kvalitetsmålinger %}
   <a href="#" id="downloadPdf">Last ned PDF</a>
@@ -95,6 +136,14 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.debug.js">window.jsPDF = window.jspdf.jsPDF;</script>
   <script type="text/javascript">
+    function openSammenlign() {
+      document.getElementById("sammenlign-form").style.display = "block";
+    }
+
+    function closeSammenlign() {
+      document.getElementById("sammenlign-form").style.display = "none";
+    }
+
     const vegobjekttyper = {{ vegobjekttyper | tojson }};
     const egenskapstyper = {{ egenskapstyper | tojson }};
     const områder = {{ områder | tojson }};
@@ -114,16 +163,14 @@
     const chartHeights = {'13': '1000px', '14':'500px','15':'500px', '28':'300px','30':'300px','58':'300px','59':'300px','62':'300px','5':'500px','6':'500px','7':'300px'}
 
     document.getElementById('område_kvalitetselement').addEventListener('click', function() {
-      // Lager ett nytt canvas for hvert relevant kvalitetselement
-      for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
-        let chartStatus = Chart.getChart(kvalitetselement_relevant_ider[i-1]); // <canvas> id
-        if (chartStatus != undefined) {
-          chartStatus.destroy();
-        };
-      }
+      // Ødelegger eksisterende canvas elementer for å kunne lage nye.
+      Object.keys(Chart.instances).forEach((key) => {
+        Chart.instances[key].destroy();
+      });
       
       var kvalitetselement_id = document.getElementById('kvalitetselement-filter').value;
-      var sammenlign_område_id = document.getElementById('sammenlign-område').value;
+      var sammenlign_område_id = document.getElementById('sammenlign-vegkategorier').value+";"+document.getElementById('sammenlign-vegsystemer').value+";"+document.getElementById('sammenlign-fylker').value+";"+document.getElementById('sammenlign-kommuner').value+";"+document.getElementById('sammenlign-områder').value;
+      console.log("SAmmenlign_område_id: ", sammenlign_område_id)
       // Hvis kvalitetselement_id er 0, vis alle kvalitetselementene
       if(kvalitetselement_id == 0){
         for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
@@ -154,8 +201,9 @@
       } else {
         var valgt_skala = defaultSkala
       }
+      var sammmenlign = document.getElementById('sammenlign-checkbox').checked;
       // Tegner graf hvis ikke sammenlign område er valgt, ellers hent data for sammenligningsområde og tegn graf
-      if(sammenlign_område_id == 0){
+      if(!sammmenlign){
         drawGraph(chart_id, verdier, null, labelNames, område, null, 70, kvalitetselement_navn, valgt_skala);
       } else {
         console.log(sammenlign_område_id)
@@ -176,9 +224,9 @@
         }).then(jsonResponse => {
           if (jsonResponse) {
             console.log(jsonResponse['sammenlign_kvalitetsmålinger']);
-            var data2 = prepareData(jsonResponse['sammenlign_kvalitetsmålinger'], jsonResponse['sammenlign_referanseverdier'], kvalitetselement_id, sammenlign_område_id);
+            var data2 = prepareData(jsonResponse['sammenlign_kvalitetsmålinger'], kvalitetselement_id, sammenlign_område_id);
             var verdier2 = data2[0]
-            var område2 = data2[1]
+            var område2 = jsonResponse['område_navn']
             var labelNames = data2[2]
             drawGraph(chart_id, verdier, verdier2, labelNames, område, område2, 70, kvalitetselement_navn, valgt_skala)
           }
@@ -218,6 +266,7 @@
     function drawGraph(chart_id, dataset1, dataset2, labels, område1, område2, kravverdi, kvalitetselement_navn, skala){
       console.log(dataset1)
       var ctx = document.getElementById(chart_id).getContext("2d");
+      console.log(ctx)
       document.getElementById(chart_id).parentElement.style.marginBottom = "50px";
 
       var font_weights = ['bold']

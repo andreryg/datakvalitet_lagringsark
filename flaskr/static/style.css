@@ -223,3 +223,6 @@ html {
   .dropdown-check-list.visible .items {
     display: block;
   }
+  .sammenlign-popup {
+    display: none;
+  }
