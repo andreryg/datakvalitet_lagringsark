@@ -131,8 +131,16 @@
     </div>
     {% endfor %}
   </div>
+  <div id="linjediagram-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Historisk kvalitet</h2>
+      <canvas id="linjediagram"></canvas>
+    </div>
+  </div>
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.debug.js">window.jsPDF = window.jspdf.jsPDF;</script>
   <script type="text/javascript">
@@ -144,13 +152,79 @@
       document.getElementById("sammenlign-form").style.display = "none";
     }
 
+    function drawLinjediagram(dataset1, dataset2, labels) {
+      let chartStatus = Chart.getChart("linjediagram"); // <canvas> id
+      if (chartStatus != undefined) {
+        chartStatus.destroy();
+      }
+
+      var line_modal = document.getElementById("linjediagram-modal");
+      line_modal.style.display = "block";
+
+      var line_ctx = document.getElementById('linjediagram').getContext("2d");
+      var lineChart = new Chart(line_ctx, {
+        type: 'line',
+        data: {
+          //labels: labels,
+          datasets: [{
+            label: 'Dataset 1',
+            data: dataset1,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            fill: false
+          }, {
+            label: 'Dataset 2',
+            data: dataset2,
+            borderColor: 'rgba(153, 102, 255, 1)',
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'hour',
+                displayFormats: {
+                  hour: 'yyyy-MM-dd HH:mm',
+                }
+              },
+            },
+            y: {
+              min: 0,
+              max: 100,
+              ticks: {
+                stepSize: 10,
+                callback: function(value) {
+                  return value + '%';
+                }
+              }
+            }
+          }
+        }
+      });
+    };
+
+    var line_modal = document.getElementById("linjediagram-modal");
+    var line_span = document.getElementsByClassName("close")[0];
+    line_span.onclick = function() {
+      line_modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+      if (event.target == line_modal) {
+        line_modal.style.display = "none";
+      }
+    }
+
     const vegobjekttyper = {{ vegobjekttyper | tojson }};
     const egenskapstyper = {{ egenskapstyper | tojson }};
     const områder = {{ områder | tojson }};
     const kvalitetselementer = {{ kvalitetselementer | tojson }};
     const kvalitetselement_relevant_ider = {{ kvalitetselement_relevant_ider | tojson}};
     const vtid = {{ vtid }};
-    const omrade_id = {{ omrade_id }};
+    const omrade_id = "{{ omrade_id }}";
+    console.log(omrade_id)
     const kvalitetsmålinger = {{ kvalitetsmålinger | tojson }};
     console.log(kvalitetsmålinger)
     const skala = {{ skala | tojson }};
@@ -169,8 +243,7 @@
       });
       
       var kvalitetselement_id = document.getElementById('kvalitetselement-filter').value;
-      var sammenlign_område_id = document.getElementById('sammenlign-vegkategorier').value+";"+document.getElementById('sammenlign-vegsystemer').value+";"+document.getElementById('sammenlign-fylker').value+";"+document.getElementById('sammenlign-kommuner').value+";"+document.getElementById('sammenlign-områder').value;
-      console.log("SAmmenlign_område_id: ", sammenlign_område_id)
+      var sammenlign_område_id = document.getElementById('sammenlign-vegkategorier').value+"&"+document.getElementById('sammenlign-vegsystemer').value+"&"+document.getElementById('sammenlign-fylker').value+"&"+document.getElementById('sammenlign-kommuner').value+"&"+document.getElementById('sammenlign-områder').value;
       // Hvis kvalitetselement_id er 0, vis alle kvalitetselementene
       if(kvalitetselement_id == 0){
         for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
@@ -204,9 +277,8 @@
       var sammmenlign = document.getElementById('sammenlign-checkbox').checked;
       // Tegner graf hvis ikke sammenlign område er valgt, ellers hent data for sammenligningsområde og tegn graf
       if(!sammmenlign){
-        drawGraph(chart_id, verdier, null, labelNames, område, null, 70, kvalitetselement_navn, valgt_skala);
+        drawGraph(chart_id, verdier, null, labelNames, område, null, 70, kvalitetselement_navn, valgt_skala, sammenlign_område_id);
       } else {
-        console.log(sammenlign_område_id)
         fetch("http://127.0.0.1:5727/add_område",
         {
           method: 'POST',
@@ -223,12 +295,11 @@
           }
         }).then(jsonResponse => {
           if (jsonResponse) {
-            console.log(jsonResponse['sammenlign_kvalitetsmålinger']);
             var data2 = prepareData(jsonResponse['sammenlign_kvalitetsmålinger'], kvalitetselement_id, sammenlign_område_id);
             var verdier2 = data2[0]
             var område2 = jsonResponse['område_navn']
             var labelNames = data2[2]
-            drawGraph(chart_id, verdier, verdier2, labelNames, område, område2, 70, kvalitetselement_navn, valgt_skala)
+            drawGraph(chart_id, verdier, verdier2, labelNames, område, område2, 70, kvalitetselement_navn, valgt_skala, sammenlign_område_id)
           }
         }).catch((err) => console.error(err));
       }
@@ -263,7 +334,7 @@
       return [verdier, område, labelNames]
     }
     
-    function drawGraph(chart_id, dataset1, dataset2, labels, område1, område2, kravverdi, kvalitetselement_navn, skala){
+    function drawGraph(chart_id, dataset1, dataset2, labels, område1, område2, kravverdi, kvalitetselement_navn, skala, sammenlign_område_id){
       console.log(dataset1)
       var ctx = document.getElementById(chart_id).getContext("2d");
       console.log(ctx)
@@ -340,53 +411,85 @@
       type: 'bar',
       data: diagram_data,
       options: {
+        onClick: function(evt, elements, chart) {
+          let graf_params = {'vtid':vtid, 'område':omrade_id, 'egenskapsnivå':(elements[0].index==0) ? false : true, 'egenskap':labels[elements[0].index], 'kvalitetselement':chart.canvas.id};
+          if (dataset2) {
+            // Graf med begge områder
+            graf_params.område2 = sammenlign_område_id
+          } else {
+            // Graf med ett område
+            graf_params.område2 = null
+          }
+          console.log(graf_params)
+          fetch("http://127.0.0.1:5727/linjediagram",
+          {
+            method: 'POST',
+            headers: {
+              'Content-type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(graf_params)
+          }).then(res => {
+            if (res.ok){
+              return res.json();
+            } else {
+              return null;
+            }
+          }).then(jsonResponse => {
+            if (jsonResponse) {
+              console.log(jsonResponse['dataset1'])
+              console.log(jsonResponse['dataset2'])
+              drawLinjediagram(jsonResponse['dataset1'], jsonResponse['dataset2'], jsonResponse['labels']);
+            }
+          }).catch((err) => console.error(err));
+        },
         indexAxis: 'y',
         elements: {
-        bar: {
-          borderWidth: 1,
-        }
+          bar: {
+            borderWidth: 1,
+          }
         },
         responsive: true,
         barPercentage: 1,
         scales: {
-        x: {
-          min: 0,
-          max: 100,
-          ticks: {
-          display: true,
-          autoSkip: false,
-          font: {
-        weight: 'bold',
-        size: 16
+          x: {
+            min: 0,
+            max: 100,
+            ticks: {
+              display: true,
+              autoSkip: false,
+              font: {
+                weight: 'bold',
+                size: 16
+              },
+              callback: function(value, index, ticks) {
+                return value + '%';
+              }
+            }
           },
-          callback: function(value, index, ticks) {
-        return value + '%';
+          y: {
+            ticks: {
+              display: true,
+              autoSkip: false,
+              font: {
+                weight: font_weights,
+                size: 16
+              }
+            }
           }
-          }
-        },
-        y: {
-          ticks: {
-          display: true,
-          autoSkip: false,
-          font: {
-        weight: font_weights,
-        size: 16
-          }
-          }
-        }
         },
         maintainAspectRatio: false,
         animation: {
         duration: 0 
         },
         plugins: {
-        title: {
-          display: true,
-          text: kvalitetselement_navn,
-          font: {
-          size: 18
+          title: {
+            display: true,
+            text: kvalitetselement_navn,
+            font: {
+            size: 18
+            }
           }
-        }
         }
       },
       plugins: [draw_background_plugin]//draw_standard_line

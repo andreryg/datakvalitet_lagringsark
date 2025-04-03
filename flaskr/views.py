@@ -3,7 +3,7 @@ from flaskr.db import get_db
 from flaskr.aggregering import aggreger_vegstrekninger
 import requests
 import tqdm
-from flaskr.hent_data import hent_data
+from flaskr.hent_data import hent_data, hent_historisk_data
 from flaskr.generer_label import generer_label
 bp = Blueprint('views', __name__)
 
@@ -116,7 +116,7 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
 
         if vtid is not None and not all(x is None for x in [vegkategori, vegsystem_id, fylke_id, kommune_id, omrade_id]):
             område_navn = generer_label(omrade_id, vegkategori, vegsystem_id, fylke_id, kommune_id)
-
+            område_id = '&'.join([str(vegkategori),str(vegsystem_id),str(fylke_id),str(kommune_id),str(omrade_id)])
             egenskapstyper = db.execute(
                 """SELECT * FROM egenskapstype"""
             ).fetchall()
@@ -134,7 +134,8 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
                 """SELECT * FROM skala"""
             ).fetchall()
             skala = [dict(row) for row in skala]
-            return render_template('views/kvalitetark.html', vtid=vtid, omrade_id=omrade_id, vegobjekttyper_=vegobjekttyper_, vegobjekttyper=vegobjekttyper, egenskapstyper=egenskapstyper, områder=vegstrekninger, kvalitetselementer=kvalitetselement, kvalitetselement_relevant_ider=kvalitetselement_relevante_ider, kvalitetsmålinger=kvalitetsmålinger, skala=skala, vegkategorier=vegkategorier, vegsystemer=vegsystemer, fylker=fylker, kommuner=kommuner, område_navn=område_navn)
+            print(område_id)
+            return render_template('views/kvalitetark.html', vtid=vtid, omrade_id=område_id, vegobjekttyper_=vegobjekttyper_, vegobjekttyper=vegobjekttyper, egenskapstyper=egenskapstyper, områder=vegstrekninger, kvalitetselementer=kvalitetselement, kvalitetselement_relevant_ider=kvalitetselement_relevante_ider, kvalitetsmålinger=kvalitetsmålinger, skala=skala, vegkategorier=vegkategorier, vegsystemer=vegsystemer, fylker=fylker, kommuner=kommuner, område_navn=område_navn)
 
         if vtid is not None:
             return render_template('views/kvalitetark.html', vegobjekttyper_=vegobjekttyper_, områder=vegstrekninger, vtid=vtid, vegkategorier=vegkategorier, vegsystemer=vegsystemer, fylker=fylker, kommuner=kommuner)
@@ -158,7 +159,7 @@ def datakvalitet_kvalitetark(vtid = None, omrade_id = None, vegkategori = None, 
 def add_område():
     jason = request.get_json()
     vtid = jason[0]
-    sammenlign_filter = jason[1].split(";")
+    sammenlign_filter = jason[1].split("&")
     vegkategori = sammenlign_filter[0]
     vegsystem_id = sammenlign_filter[1]
     fylke_id = sammenlign_filter[2]
@@ -167,3 +168,36 @@ def add_område():
     område_navn = generer_label(område_id, vegkategori, vegsystem_id, fylke_id, kommune_id)
     kvalitetsmålinger = hent_data(vtid, vegkategori, vegsystem_id, fylke_id, kommune_id, område_id)
     return {'sammenlign_kvalitetsmålinger':kvalitetsmålinger, 'område_navn':område_navn}
+
+@bp.route("/linjediagram", methods=('GET', 'POST'))
+def linjediagram():
+    jason = request.get_json()
+    print(jason)
+    vtid = jason.get('vtid')
+    sammenlign_filter = jason.get('område').replace("amp;", "").split("&")
+    vegkategori = sammenlign_filter[0]
+    vegsystem_id = sammenlign_filter[1]
+    fylke_id = sammenlign_filter[2]
+    kommune_id = sammenlign_filter[3]
+    område_id = sammenlign_filter[4]
+    if jason.get('egenskapsnivå'):
+        et_navn = jason.get('egenskap')
+    else:
+        et_navn = None
+    kvid = int(jason.get('kvalitetselement'))
+
+    område1_navn = generer_label(område_id, vegkategori, vegsystem_id, fylke_id, kommune_id)
+    dataset1 = hent_historisk_data(vtid, et_navn, kvid, vegkategori, vegsystem_id, fylke_id, kommune_id, område_id)
+    dataset1 = [{'x': item['dato'], 'y': item['verdi']/item['ref_verdi']*100} for item in dataset1]
+    dataset2 = None
+    if jason.get('område2'):
+        sammenlign_filter = jason.get('område2').replace("amp;", "").split("&")
+        vegkategori = sammenlign_filter[0]
+        vegsystem_id = sammenlign_filter[1]
+        fylke_id = sammenlign_filter[2]
+        kommune_id = sammenlign_filter[3]
+        område_id = sammenlign_filter[4]
+        område2_navn = generer_label(område_id, vegkategori, vegsystem_id, fylke_id, kommune_id)
+        dataset2 = hent_historisk_data(vtid, et_navn, kvid, vegkategori, vegsystem_id, fylke_id, kommune_id, område_id)
+        dataset2 = [{'x': item['dato'], 'y': item['verdi']/item['ref_verdi']*100} for item in dataset2]
+    return {'dataset1':dataset1, 'dataset2':dataset2, 'labels':[område1_navn, område2_navn] if dataset2 else [område1_navn]}
