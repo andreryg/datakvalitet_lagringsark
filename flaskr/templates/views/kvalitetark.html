@@ -144,6 +144,21 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.debug.js">window.jsPDF = window.jspdf.jsPDF;</script>
   <script type="text/javascript">
+    const vegobjekttyper = {{ vegobjekttyper | tojson }};
+    const egenskapstyper = {{ egenskapstyper | tojson }};
+    const områder = {{ områder | tojson }};
+    const kvalitetselementer = {{ kvalitetselementer | tojson }};
+    const kvalitetselement_relevant_ider = {{ kvalitetselement_relevant_ider | tojson}};
+    const vtid = {{ vtid }};
+    const omrade_id = "{{ omrade_id }}";
+    console.log(omrade_id)
+    const kvalitetsmålinger = {{ kvalitetsmålinger | tojson }};
+    console.log(kvalitetsmålinger)
+    const skala = {{ skala | tojson }};
+    const defaultSkala = skala.filter(dict => dict.id === 1);
+    const filteredVegobjekttyper = vegobjekttyper.filter(dict => dict.id === vtid);
+    var filteredEgenskapstyper = egenskapstyper.filter(dict => dict.vegobjekttype_id === vtid);
+
     function openSammenlign() {
       document.getElementById("sammenlign-form").style.display = "block";
     }
@@ -157,7 +172,11 @@
       if (chartStatus != undefined) {
         chartStatus.destroy();
       }
-
+      var y_values1 = dataset1.map(dict => dict['y']);
+      var y_values2 = dataset2 ? dataset2.map(dict => dict['y']) : null;
+      console.log(labels[1])
+      var kvelem_navn = kvalitetselementer.filter(dict => dict.id == labels[1])[0]['navn'];
+      console.log(labels[1], kvelem_navn)
       var line_modal = document.getElementById("linjediagram-modal");
       line_modal.style.display = "block";
 
@@ -167,16 +186,16 @@
         data: {
           //labels: labels,
           datasets: [{
-            label: 'Dataset 1',
+            label: labels[2] + " (" + (Math.round((y_values1[0] - y_values1[y_values1.length - 1]) * 100) / 100 >= 0 ? "+" : "") + Math.round((y_values1[0] - y_values1[y_values1.length - 1]) * 100) / 100 + "%)",
             data: dataset1,
-            borderColor: 'rgba(75, 192, 192, 1)',
+            borderColor: '#225555',
             fill: false
-          }, {
-            label: 'Dataset 2',
+          }].concat(dataset2 ? [{
+            label: labels[3] + " (" + (Math.round((y_values2[0] - y_values2[y_values2.length - 1]) * 100) / 100 >= 0 ? "+" : "") + Math.round((y_values2[0] - y_values2[y_values2.length - 1])*100)/100 + "%)",
             data: dataset2,
-            borderColor: 'rgba(153, 102, 255, 1)',
+            borderColor: '#555555',
             fill: false
-          }]
+          }] : [])
         },
         options: {
           responsive: true,
@@ -200,7 +219,25 @@
                 }
               }
             }
-          }
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: kvalitetselementer.filter(dict => dict.id == labels[1])[0]['navn']+": "+labels[0],
+              font: {
+                size: 18
+              }
+            },
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                font: {
+                  size: 16
+                }
+              }
+            }
+          },
         }
       });
     };
@@ -216,21 +253,6 @@
         line_modal.style.display = "none";
       }
     }
-
-    const vegobjekttyper = {{ vegobjekttyper | tojson }};
-    const egenskapstyper = {{ egenskapstyper | tojson }};
-    const områder = {{ områder | tojson }};
-    const kvalitetselementer = {{ kvalitetselementer | tojson }};
-    const kvalitetselement_relevant_ider = {{ kvalitetselement_relevant_ider | tojson}};
-    const vtid = {{ vtid }};
-    const omrade_id = "{{ omrade_id }}";
-    console.log(omrade_id)
-    const kvalitetsmålinger = {{ kvalitetsmålinger | tojson }};
-    console.log(kvalitetsmålinger)
-    const skala = {{ skala | tojson }};
-    const defaultSkala = skala.filter(dict => dict.id === 1);
-    const filteredVegobjekttyper = vegobjekttyper.filter(dict => dict.id === vtid);
-    var filteredEgenskapstyper = egenskapstyper.filter(dict => dict.vegobjekttype_id === vtid);
     //if (kvid == 2) {
     //  filteredEgenskapstyper = filteredEgenskapstyper.filter(dict => dict.viktighet === "PÅKREVD_IKKE_ABSOLUTT" || dict.viktighet === "PÅKREVD_ABSOLUTT")
     //} 

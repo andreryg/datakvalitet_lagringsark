@@ -37,9 +37,10 @@ def generer_label(omrade_id, vegkategori, vegsystem_id, fylke_id, kommune_id):
         ).fetchone()[0]
     else:
         kommune_navn = ""
-    område_navn = vegkategori_navn + " " + vegsystem_navn + " " + fylke_navn + " " + kommune_navn + " " + område_navn
+    print(område_navn, vegkategori_navn, vegsystem_navn, fylke_navn, kommune_navn)
+    område_navn = vegkategori_navn + " " + str(vegsystem_navn) + " " + fylke_navn + " " + kommune_navn + " " + område_navn
     område_navn = " ".join(område_navn.split())
     if område_navn == "":
-        område_navn = "Alle"
+        område_navn = "Norge"
 
     return område_navn

@@ -200,4 +200,4 @@ def linjediagram():
         område2_navn = generer_label(område_id, vegkategori, vegsystem_id, fylke_id, kommune_id)
         dataset2 = hent_historisk_data(vtid, et_navn, kvid, vegkategori, vegsystem_id, fylke_id, kommune_id, område_id)
         dataset2 = [{'x': item['dato'], 'y': item['verdi']/item['ref_verdi']*100} for item in dataset2]
-    return {'dataset1':dataset1, 'dataset2':dataset2, 'labels':[område1_navn, område2_navn] if dataset2 else [område1_navn]}
+    return {'dataset1':dataset1, 'dataset2':dataset2, 'labels':[jason.get('egenskap'), kvid, område1_navn, område2_navn] if dataset2 else [jason.get('egenskap'), kvid, område1_navn]}
