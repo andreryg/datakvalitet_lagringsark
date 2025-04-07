@@ -66,13 +66,12 @@ class Automatisk_registrer_kvalitet():
 
         #Et problem her at jeg må finne riktig strekning id mtp fylke og kommune.
     def hent_kvalitet(self, kvalitetselement, vegstrekning, fylke, kommune):
-        self.referanseverdi = self.temp_temp_df.shape[0]
         try:
             module = __import__(f'flaskr.kvalitetskontroller.{kvalitetselement.get("kv_1")}.{kvalitetselement.get("kv_2")}.{kvalitetselement.get("kv_3").replace(" ","_")}', fromlist=[''])
             function = getattr(module, kvalitetselement.get("kv_1")+"_"+kvalitetselement.get("kv_2")+"_"+kvalitetselement.get("kv_3").replace(" ","_")+"_kvalitet")
         except:
             return False
-        self.kvalitetsmåling = function(self.temp_temp_df, self.egenskapstyper)
+        self.kvalitetsmåling, self.referanseverdi = function(self.temp_temp_df, self.egenskapstyper)
         db = get_db()
         vegstrekning_id = db.execute(
             "SELECT id FROM vegstrekning WHERE fylke_id = ? AND kommune_id = ? AND navn = ?",

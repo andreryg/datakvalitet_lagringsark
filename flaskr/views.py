@@ -44,8 +44,8 @@ def add_kvalitetsmålinger():
     
     vegobjekttyper = [dict(row) for row in vegobjekttyper]
     for vegobjekttype in vegobjekttyper:
-        if vegobjekttype['vt_id'] == 3:
-            kvalitet = Automatisk_registrer_kvalitet(vegobjekttype['vt_id'])
+        if vegobjekttype['vt_id'] == 487: #Vegobjekttyper som skal registrere kvalitet
+            Automatisk_registrer_kvalitet(vegobjekttype['vt_id'])
     
     db.commit()
     return redirect(url_for('views.index'))
