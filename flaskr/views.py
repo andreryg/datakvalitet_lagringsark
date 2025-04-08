@@ -44,10 +44,10 @@ def add_kvalitetsmålinger():
     
     vegobjekttyper = [dict(row) for row in vegobjekttyper]
     for vegobjekttype in vegobjekttyper:
-        if vegobjekttype['vt_id'] == 487: #Vegobjekttyper som skal registrere kvalitet
+        if vegobjekttype['vt_id'] in [487]: #Vegobjekttyper som skal registrere kvalitet
             Automatisk_registrer_kvalitet(vegobjekttype['vt_id'])
+            db.commit()
     
-    db.commit()
     return redirect(url_for('views.index'))
 
 @bp.route('/aggreger', methods=('GET', 'POST'))
