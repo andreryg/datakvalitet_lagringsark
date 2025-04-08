@@ -269,15 +269,13 @@
       // Hvis kvalitetselement_id er 0, vis alle kvalitetselementene
       if(kvalitetselement_id == 0){
         for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
-          document.getElementById(`canvas_div_${kvalitetselement_relevant_ider[i-1]}`).style.height = chartHeights[kvalitetselement_relevant_ider[i-1]];
           createElement(kvalitetselement_relevant_ider[i-1], kvalitetselement_relevant_ider[i-1], sammenlign_område_id);
         }
-      // Hvis ikke sett størrelsen til alle canvasene til 0, og sett størrelsen til det valgte canvaset
+      // Hvis ikke sett størrelsen til alle canvasene til 0, og vis ett
       } else {
         for(var i=1; i<kvalitetselement_relevant_ider.length+1; i++){
           document.getElementById(`canvas_div_${kvalitetselement_relevant_ider[i-1]}`).style.height = '0px';
         }
-        document.getElementById(`canvas_div_${kvalitetselement_id}`).style.height = chartHeights[kvalitetselement_id]
         createElement(kvalitetselement_id, kvalitetselement_id, sammenlign_område_id)
       }
     });
@@ -289,6 +287,8 @@
       var verdier = data[0];
       var område = data[1];
       var labelNames = data[2]
+      // Setter dynamisk høyde på canvas basert på antall egenskaper: 30 (label og akse) + 70 (Aggregert verdi) + 70 (per egenskap
+      document.getElementById(`canvas_div_${chart_id}`).style.height = 30+70+70*labelNames.length + 'px';
       var finn_skala = skala.filter(dict => dict.vegobjekttype_id == vtid && dict.kvalitetselement_id == kvalitetselement_id);
       // Velger riktig skala, hvis det ikke finnes en skala for det valgte kvalitetselementet, bruk defaultSkala
       if (finn_skala.length > 0) {
